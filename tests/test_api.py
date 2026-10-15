@@ -459,3 +459,38 @@ def test_a_redelivered_bulk_load_does_not_insert_twice(client, key_header, loade
 def test_batch_rejects_foreign_buckets_and_missing_objects(client, key_header):
     assert client.post(f"{API}/events/batch", json={"source_uri": "s3://some-other-bucket/x.csv"}, headers=key_header).status_code == 422
     assert client.post(f"{API}/events/batch", json={"source_uri": "http://evil.example/x.csv"}, headers=key_header).status_code == 422
+
+
+# ------------------------------------------------------------------ web UI + overview
+def test_ui_is_served_and_root_redirects(client):
+    r = client.get("/", follow_redirects=False)
+    assert r.status_code in (301, 302, 307) and r.headers["location"] == "/app/"
+    page = client.get("/app/")
+    assert page.status_code == 200 and "Hospital Activity" in page.text
+    assert client.get("/app/app.js").status_code == 200 and client.get("/app/styles.css").status_code == 200
+
+
+def test_overview_endpoints_summarise_the_analytics_tables(client, auth, loaded, monkeypatch):
+    _run_inline(_submit(client, auth, {"job_type": "full_analysis", "start_date": "2025-01-01", "end_date": "2025-02-28"}, monkeypatch)["job_id"])
+    h = auth("viewer")
+    d = client.get(f"{API}/overview/departments", headers=h).json()
+    assert len(d["departments"]) == 8 and d["analysed_range"]["first"] == "2025-01-01"
+
+    s = client.get(f"{API}/overview/summary", params={"start_date": "2025-01-01", "end_date": "2025-02-28"}, headers=h).json()
+    with SessionLocal() as db:
+        direct = db.execute(text("SELECT sum(admission_count) FROM analytics.admission_metrics")).scalar_one()
+    assert s["totals"]["admissions"] == direct and s["granularity"] == "day"  # 59 days: daily points
+    assert sum(x["admissions"] for x in s["departments"]) == direct
+    assert s["busiest_department"] and s["busiest_day"]["admissions"] > 0
+
+    one = client.get(f"{API}/overview/summary", params={"start_date": "2025-01-01", "end_date": "2025-01-31", "department_id": 1}, headers=h).json()
+    assert [x["department_id"] for x in one["departments"]] == [1] and one["granularity"] == "day" and len(one["trend"]) == 31
+
+    p = client.get(f"{API}/overview/weekly-pattern", params={"start_date": "2025-01-22", "end_date": "2025-02-28"}, headers=h).json()
+    assert len(p["weekday"]) == len(p["weekend"]) == 24 and all(0 <= v <= 2 for v in p["weekday"] if v is not None)
+
+
+def test_overview_requires_a_login_and_validates_dates(client, auth):
+    assert client.get(f"{API}/overview/departments").status_code == 401
+    bad = client.get(f"{API}/overview/summary", params={"start_date": "2025-03-01", "end_date": "2025-01-01"}, headers=auth("viewer"))
+    assert bad.status_code == 400

@@ -1,9 +1,11 @@
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 import structlog
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 
 from app.api.v1.router import api_router
@@ -63,6 +65,15 @@ app.add_middleware(
 app.add_middleware(RequestContextMiddleware)  # outermost: wraps everything, including CORS
 install_error_handlers(app)
 app.include_router(api_router)
+
+# The web UI: plain HTML/CSS/JS, no build step, served from the same origin as the API.
+WEB_DIR = Path(__file__).parent / "web"
+app.mount("/app", StaticFiles(directory=WEB_DIR, html=True), name="ui")
+
+
+@app.get("/", include_in_schema=False)
+def home():
+    return RedirectResponse("/app/")
 
 
 @app.get("/health", tags=["ops"], summary="Liveness/readiness for platform health checks")

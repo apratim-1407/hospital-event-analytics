@@ -25,7 +25,8 @@ Requires Docker Desktop. Nothing else.
 
 ```bash
 docker compose up -d --build            # api, worker, postgres, redis, object storage (+ migrations and seeding)
-open http://localhost:8000/docs         # Swagger UI
+open http://localhost:8000/             # the web dashboard (plain-language, for non-technical users)
+open http://localhost:8000/docs         # Swagger UI (for developers)
 ```
 
 Seeded **development** accounts (from `.env.example`; override in `.env`, never used outside `ENVIRONMENT=dev`):
@@ -71,6 +72,15 @@ Scale the processing tier by changing nothing but a replica count:
 ```bash
 docker compose up -d --scale worker=4 --no-recreate worker
 ```
+
+## The dashboard
+
+`http://localhost:8000/` is a calm, white, plain-language view of the same results, written for hospital staff rather than
+engineers: sentences instead of codes ("Beds in use", "Worth a look"), thin lines instead of boxes, no jargon. It shows
+how busy the hospital has been, which departments see the most patients, when beds are fullest, and the days and hours
+that were out of the ordinary, in either direction. Analysts can start a fresh analysis and watch it progress; admins also
+get a "Behind the scenes" panel. It is plain HTML/CSS/JS (hand-drawn SVG charts, no external requests), served by the API
+itself. It reads three dashboard endpoints (`/api/v1/overview/*`) on top of the analytics ones.
 
 ## What the system does
 
@@ -196,7 +206,7 @@ the 5 ms tasks often finish before the kill lands and there is nothing to recove
 ## Testing, benchmarks, load, demos
 
 ```bash
-docker compose --profile tools run --rm tools python -m pytest        # 85 tests; uses a throwaway DB + Redis DBs 10-13
+docker compose --profile tools run --rm tools python -m pytest        # 88 tests; uses a throwaway DB + Redis DBs 10-13
 
 python scripts/benchmark.py --sizes small medium large --workers 1 4   # M1 across 10k/100k/1M  -> benchmarks/results.md
 python scripts/benchmark.py --sizes large --workers 1 2 4              # the scalability experiment
@@ -242,6 +252,7 @@ migrations/      Alembic (raw schema partitioned by month, append-only trigger, 
 scripts/         generate.py, load_csv.py, score_anomalies.py, bootstrap.py | host: benchmark.py, loadtest.py, demo.py
 loadtests/       locustfile.py
 tests/           unit (anomaly, partition, map/reduce, generator) + integration (API, RBAC, jobs, failure paths)
+  web/           the dashboard: plain HTML/CSS/JS, no build step, served at /
 docs/            ARCHITECTURE.md, PERFORMANCE.md, DEMO_RUNBOOK.md
 docker-compose.yml  Dockerfile  .env.example
 ```

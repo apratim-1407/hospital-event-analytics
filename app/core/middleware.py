@@ -67,7 +67,7 @@ class RequestContextMiddleware:
                 "duration_ms": round(duration_ms, 2),
                 "principal": (scope.get("state") or {}).get("principal"),
             }
-            if scope["path"] in QUIET_PATHS:
+            if scope["path"] in QUIET_PATHS or scope["path"].startswith("/app/"):
                 log.debug("http.request", **fields)
             else:
                 level = "warning" if status >= 400 else "info"
