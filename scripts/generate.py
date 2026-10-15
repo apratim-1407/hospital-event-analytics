@@ -237,13 +237,19 @@ def _build_stays(seed, attempt, scale, days, start_secs, end_secs, anomaly_plans
         baseline.append(make_stays(rng, dept, arrivals))
     base = Stays.concat(baseline)
 
-    # Ward sizes follow the generated load: capacity = mean occupancy / target utilisation.
+    # Ward sizes follow the generated load. A hospital sizes wards for its busy hours, not its
+    # average, so capacity is the larger of (mean occupancy / target utilisation) and (the busiest
+    # ordinary hour / 92%): everyday variation stays inside the walls, and only genuine incidents
+    # (the injected anomalies) push a ward to or past capacity.
     span_hours = n_days * 24
+    warmup = 21 * 24 if n_days > 45 else 0  # the first weeks fill up from empty beds
     capacity = {}
     for dept in PROFILES:
         m = base.dept == dept.id
         mean_occ = base.los[m].sum() / span_hours
-        capacity[dept.id] = max(10, math.ceil(mean_occ / dept.util))
+        occ = _occupancy_hourly(base, dept.id, start_secs, span_hours)[warmup:]
+        busiest = float(np.percentile(occ, 99.9)) if len(occ) else mean_occ
+        capacity[dept.id] = max(10, math.ceil(mean_occ / dept.util), math.ceil(busiest / 0.92))
 
     injected = []
     truth = []
