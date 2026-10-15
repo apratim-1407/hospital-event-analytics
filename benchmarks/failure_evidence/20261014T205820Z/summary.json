@@ -1,0 +1,92 @@
+{
+  "victim": "hospital-worker-2",
+  "survivors": [
+    "hospital-worker-1",
+    "hospital-worker-3",
+    "hospital-worker-4"
+  ],
+  "killed_at": "2026-10-14T20:57:17.969505+00:00",
+  "progress_at_kill_pct": 40.4,
+  "baseline": {
+    "job_id": "f99ceaa1-2f97-4ef4-8683-d16f781f018d",
+    "job_type": "full_analysis",
+    "status": "completed",
+    "params": {
+      "data_end": "2025-12-31",
+      "end_date": "2025-12-31",
+      "range_end": "2025-12-31",
+      "data_start": "2023-01-01",
+      "start_date": "2023-01-01",
+      "departments": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "range_start": "2023-01-01",
+      "trace_correlation_ids": []
+    },
+    "requested_by": 2,
+    "created_at": "2026-10-14T20:56:18.872420Z",
+    "started_at": "2026-10-14T20:56:18.929721Z",
+    "finished_at": "2026-10-14T20:57:01.438670Z",
+    "duration_seconds": 42.509,
+    "events_processed": 1000000,
+    "partitions_total": 8768,
+    "partitions_completed": 8768,
+    "progress_pct": 100.0,
+    "error_detail": null,
+    "poll_url": "/api/v1/jobs/f99ceaa1-2f97-4ef4-8683-d16f781f018d"
+  },
+  "failure_run": {
+    "job_id": "bb35c3e5-b9e9-425c-a6d3-dbe5c0a57520",
+    "job_type": "full_analysis",
+    "status": "completed",
+    "params": {
+      "data_end": "2025-12-31",
+      "end_date": "2025-12-31",
+      "range_end": "2025-12-31",
+      "data_start": "2023-01-01",
+      "start_date": "2023-01-01",
+      "departments": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "range_start": "2023-01-01",
+      "trace_correlation_ids": []
+    },
+    "requested_by": 2,
+    "created_at": "2026-10-14T20:57:03.946788Z",
+    "started_at": "2026-10-14T20:57:04.197286Z",
+    "finished_at": "2026-10-14T20:58:16.283773Z",
+    "duration_seconds": 72.086,
+    "events_processed": 1000000,
+    "partitions_total": 8768,
+    "partitions_completed": 8768,
+    "progress_pct": 100.0,
+    "error_detail": null,
+    "poll_url": "/api/v1/jobs/bb35c3e5-b9e9-425c-a6d3-dbe5c0a57520"
+  },
+  "checksums_baseline": {
+    "admissions": "81841797b3ab6bfdff9c4e1edd55d7d6|8768",
+    "resources": "fe106709c69c69106c128468751b4360|210432",
+    "anomalies": "0bf84ef23e8255981a9db165f52db050|69"
+  },
+  "checksums_after_failure": {
+    "admissions": "81841797b3ab6bfdff9c4e1edd55d7d6|8768",
+    "resources": "fe106709c69c69106c128468751b4360|210432",
+    "anomalies": "0bf84ef23e8255981a9db165f52db050|69"
+  },
+  "identical": true,
+  "redelivered_tasks": 2
+}

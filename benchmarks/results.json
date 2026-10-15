@@ -1,0 +1,171 @@
+{
+  "environment": {
+    "date": "2026-10-14T19:55:10+00:00",
+    "host": "Windows-11-10.0.22631-SP0",
+    "docker_cpus": "16",
+    "worker_concurrency_per_container": 2
+  },
+  "runs": [
+    {
+      "size": "small",
+      "workers": 1,
+      "events": 10000,
+      "partitions": 248,
+      "seconds": 1.268,
+      "events_per_second": 7886
+    },
+    {
+      "size": "small",
+      "workers": 1,
+      "events": 10000,
+      "partitions": 248,
+      "seconds": 1.105,
+      "events_per_second": 9050
+    },
+    {
+      "size": "small",
+      "workers": 2,
+      "events": 10000,
+      "partitions": 248,
+      "seconds": 0.904,
+      "events_per_second": 11062
+    },
+    {
+      "size": "small",
+      "workers": 2,
+      "events": 10000,
+      "partitions": 248,
+      "seconds": 0.881,
+      "events_per_second": 11351
+    },
+    {
+      "size": "small",
+      "workers": 4,
+      "events": 10000,
+      "partitions": 248,
+      "seconds": 0.739,
+      "events_per_second": 13532
+    },
+    {
+      "size": "small",
+      "workers": 4,
+      "events": 10000,
+      "partitions": 248,
+      "seconds": 0.71,
+      "events_per_second": 14085
+    },
+    {
+      "size": "medium",
+      "workers": 1,
+      "events": 100000,
+      "partitions": 1448,
+      "seconds": 7.423,
+      "events_per_second": 13472
+    },
+    {
+      "size": "medium",
+      "workers": 1,
+      "events": 100000,
+      "partitions": 1448,
+      "seconds": 6.727,
+      "events_per_second": 14865
+    },
+    {
+      "size": "medium",
+      "workers": 2,
+      "events": 100000,
+      "partitions": 1448,
+      "seconds": 4.831,
+      "events_per_second": 20700
+    },
+    {
+      "size": "medium",
+      "workers": 2,
+      "events": 100000,
+      "partitions": 1448,
+      "seconds": 4.911,
+      "events_per_second": 20362
+    },
+    {
+      "size": "medium",
+      "workers": 4,
+      "events": 100000,
+      "partitions": 1448,
+      "seconds": 3.83,
+      "events_per_second": 26110
+    },
+    {
+      "size": "medium",
+      "workers": 4,
+      "events": 100000,
+      "partitions": 1448,
+      "seconds": 3.63,
+      "events_per_second": 27548
+    },
+    {
+      "size": "large",
+      "workers": 1,
+      "events": 1000000,
+      "partitions": 8768,
+      "seconds": 45.86,
+      "events_per_second": 21805
+    },
+    {
+      "size": "large",
+      "workers": 1,
+      "events": 1000000,
+      "partitions": 8768,
+      "seconds": 40.914,
+      "events_per_second": 24442
+    },
+    {
+      "size": "large",
+      "workers": 2,
+      "events": 1000000,
+      "partitions": 8768,
+      "seconds": 28.134,
+      "events_per_second": 35544
+    },
+    {
+      "size": "large",
+      "workers": 2,
+      "events": 1000000,
+      "partitions": 8768,
+      "seconds": 29.111,
+      "events_per_second": 34351
+    },
+    {
+      "size": "large",
+      "workers": 4,
+      "events": 1000000,
+      "partitions": 8768,
+      "seconds": 23.579,
+      "events_per_second": 42411
+    },
+    {
+      "size": "large",
+      "workers": 4,
+      "events": 1000000,
+      "partitions": 8768,
+      "seconds": 23.782,
+      "events_per_second": 42049
+    }
+  ],
+  "query_latency": {
+    "small": {
+      "p50_ms": 3.98,
+      "p95_ms": 25.84,
+      "n": 60
+    },
+    "medium": {
+      "p50_ms": 4.69,
+      "p95_ms": 25.78,
+      "n": 60
+    },
+    "large": {
+      "p50_ms": 4.83,
+      "p95_ms": 25.26,
+      "n": 60
+    }
+  }
+}
