@@ -1,0 +1,157 @@
+# Full topology on a laptop:  docker compose up -d --build
+# Scale the processing tier:   docker compose up -d --scale worker=4
+# api, worker and migrate are built from the same Dockerfile and tagged separately.
+# Project name is fixed so containers are called hospital-worker-1, -2, ...
+name: hospital
+
+x-app-build: &app-build
+  context: .
+  target: runtime
+
+x-app-env: &app-env
+  ENVIRONMENT: ${ENVIRONMENT:-dev}
+  LOG_LEVEL: ${LOG_LEVEL:-INFO}
+  DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-hospital}:${POSTGRES_PASSWORD:-hospital}@postgres:5432/${POSTGRES_DB:-hospital}
+  REDIS_URL: redis://redis:6379
+  JWT_SECRET: ${JWT_SECRET:-dev-only-secret-change-me}
+  S3_ENDPOINT_URL: http://objectstore:9000
+  S3_ACCESS_KEY: ${S3_ACCESS_KEY:-minioadmin}
+  S3_SECRET_KEY: ${S3_SECRET_KEY:-minioadmin}
+  S3_BUCKET: ${S3_BUCKET:-hospital-events}
+  SEED_USERS: ${SEED_USERS:-true}
+  SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@hospital.local}
+  SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-Admin#12345}
+  SEED_ANALYST_EMAIL: ${SEED_ANALYST_EMAIL:-analyst@hospital.local}
+  SEED_ANALYST_PASSWORD: ${SEED_ANALYST_PASSWORD:-Analyst#12345}
+  SEED_VIEWER_EMAIL: ${SEED_VIEWER_EMAIL:-viewer@hospital.local}
+  SEED_VIEWER_PASSWORD: ${SEED_VIEWER_PASSWORD:-Viewer#12345}
+  SEED_INGEST_API_KEY: ${SEED_INGEST_API_KEY:-hea_dev_ingest_key_change_me}
+  CELERY_VISIBILITY_TIMEOUT: ${CELERY_VISIBILITY_TIMEOUT:-45}
+  MAP_TASK_SLEEP_MS: ${MAP_TASK_SLEEP_MS:-0}
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-hospital}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hospital}
+      POSTGRES_DB: ${POSTGRES_DB:-hospital}
+    command: >
+      postgres
+      -c max_connections=300
+      -c shared_buffers=512MB
+      -c work_mem=32MB
+      -c maintenance_work_mem=256MB
+      -c synchronous_commit=off
+      -c max_wal_size=2GB
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-hospital} -d ${POSTGRES_DB:-hospital}"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    # Broker, shuffle store, result cache and token store. Persistence is off on
+    # purpose: every piece of state in here is reproducible or short-lived.
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory-policy", "noeviction"]
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  # S3-compatible object storage for bulk CSV uploads. (SeaweedFS: MinIO's official
+  # images are no longer published to public registries.) Local-only and unauthenticated.
+  objectstore:
+    image: chrislusf/seaweedfs:latest
+    command: ["server", "-dir=/data", "-s3", "-s3.port=9000", "-volume.max=50", "-master.volumeSizeLimitMB=512"]
+    ports:
+      - "9000:9000"
+    volumes:
+      - objectdata:/data
+
+  migrate:
+    build: *app-build
+    image: hospital-migrate
+    environment: *app-env
+    command: ["sh", "-c", "alembic upgrade head && python -m scripts.bootstrap"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      objectstore:
+        condition: service_started
+    restart: "no"
+
+  api:
+    build: *app-build
+    image: hospital-api
+    environment:
+      <<: *app-env
+      SERVICE_NAME: api
+      DB_POOL_SIZE: ${DB_POOL_SIZE:-20}
+    command:
+      - sh
+      - -c
+      - exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --no-access-log --workers ${API_WORKERS:-4}
+    ports:
+      - "8000:8000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  worker:
+    build: *app-build
+    image: hospital-worker
+    environment:
+      <<: *app-env
+      SERVICE_NAME: worker
+      DB_POOL_SIZE: "5"
+      DB_MAX_OVERFLOW: "2"
+    command:
+      - sh
+      - -c
+      - exec celery -A app.pipeline.celery_app:celery_app worker --loglevel=INFO --concurrency=${WORKER_CONCURRENCY:-2} --hostname=worker@%h
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    # No auto-restart on purpose: when a worker is killed mid-job the demo must show the
+    # SURVIVORS finishing the work, not the dead container quietly coming back.
+    restart: "no"
+
+  # Tooling container: pytest, data generator, benchmark helpers, Locust.
+  # docker compose --profile tools run --rm tools python -m scripts.generate ...
+  tools:
+    build:
+      context: .
+      target: dev
+    image: hospital-tools
+    profiles: ["tools"]
+    environment:
+      <<: *app-env
+      SERVICE_NAME: tools
+      API_BASE_URL: http://api:8000
+    volumes:
+      - ./:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  objectdata:

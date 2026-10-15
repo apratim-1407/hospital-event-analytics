@@ -1,0 +1,19 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.idea/
+.vscode/
+
+# Generated datasets are reproducible from a seed; never commit them.
+data/*
+!data/.gitkeep
+
+# Benchmark output: keep the reports, not scratch files.
+benchmarks/*.tmp
+
+# Locust side files; the HTML report and *_stats.csv are the evidence worth keeping.
+benchmarks/*_history.csv
+benchmarks/*_exceptions.csv
+benchmarks/*_failures.csv
