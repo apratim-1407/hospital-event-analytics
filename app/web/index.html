@@ -3,156 +3,56 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Hospital Activity</title>
-  <meta name="description" content="A plain-language view of how busy the hospital has been.">
-  <link rel="stylesheet" href="styles.css">
+  <title>Hospital Event Analytics</title>
+  <meta name="description" content="Admissions, bed utilisation and unusual workloads for hospital operations.">
+  <meta name="color-scheme" content="light">
+  <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
 
-  <!-- ───────────── Sign in ───────────── -->
-  <main id="login-view" class="login" hidden>
-    <div class="login-inner">
-      <p class="brand">Hospital Activity</p>
-      <h1>Welcome back.</h1>
-      <p class="soft">Sign in to see how the hospital has been doing.</p>
-      <form id="login-form" autocomplete="on">
-        <label>
-          <span>Email</span>
-          <input id="email" type="email" required autocomplete="username" placeholder="you@hospital.local">
-        </label>
-        <label>
-          <span>Password</span>
-          <input id="password" type="password" required autocomplete="current-password">
-        </label>
-        <p id="login-error" class="form-note" role="alert" hidden></p>
-        <button class="primary" type="submit">Sign in</button>
+  <!-- Sign in -->
+  <main id="signin" class="signin" hidden>
+    <div class="signin-box">
+      <div class="logo" style="padding:0">
+        <svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#2563EB"/><path d="M13 7h6v6h6v6h-6v6h-6v-6H7v-6h6z" fill="#fff"/></svg>
+        <div><b>Hospital Event Analytics</b><span>Operations</span></div>
+      </div>
+      <h1>Sign in</h1>
+      <p class="slate">See how busy the hospital has been and where capacity is tight.</p>
+      <form id="signin-form">
+        <label class="field"><span>Email</span><input id="email" type="email" required autocomplete="username"></label>
+        <label class="field"><span>Password</span><input id="password" type="password" required autocomplete="current-password"></label>
+        <p id="signin-error" role="alert" style="color:var(--red)" hidden></p>
+        <button class="btn primary" id="signin-go" type="submit">Sign in</button>
       </form>
       <p class="fine">Demonstration data only. No real patient information is used.</p>
     </div>
   </main>
 
-  <!-- ───────────── The app ───────────── -->
-  <div id="app-view" hidden>
-    <header class="top">
-      <div class="top-inner">
-        <a class="brand" href="#overview">Hospital Activity</a>
-        <nav aria-label="Sections">
-          <a href="#overview">Overview</a>
-          <a href="#beds">Beds</a>
-          <a href="#attention">Worth a look</a>
-          <a href="#analysis">Refresh</a>
-          <a href="#behind" id="nav-behind" hidden>Behind the scenes</a>
-        </nav>
-        <p class="who"><span id="who"></span> <button id="signout" class="link" type="button">Sign out</button></p>
+  <!-- Application -->
+  <div id="shell" class="shell" hidden>
+    <aside class="side" id="side" aria-label="Main">
+      <div class="logo">
+        <svg width="28" height="28" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#2563EB"/><path d="M13 7h6v6h6v6h-6v6h-6v-6H7v-6h6z" fill="#fff"/></svg>
+        <div><b>Hospital Event</b><span>Analytics</span></div>
       </div>
-    </header>
+      <nav class="nav" id="nav" aria-label="Sections"></nav>
+      <div class="side-foot">
+        <div class="status" id="status" role="status"><i></i><span id="status-text">Checking…</span></div>
+        <div class="who"><b id="who-email"></b><span id="who-role"></span></div>
+        <button class="linkbtn" id="signout" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg> Sign out</button>
+      </div>
+    </aside>
 
-    <main class="page">
-
-      <!-- Overview -->
-      <section id="overview" aria-labelledby="lede">
-        <p class="eyebrow">Overview</p>
-        <h1 id="lede" class="lede" aria-live="polite">Gathering the picture…</h1>
-
-        <div class="controls">
-          <div class="control">
-            <span class="control-label">Showing</span>
-            <div id="period" class="seg" role="group" aria-label="Time period">
-              <button type="button" data-period="month">Last 30 days</button>
-              <button type="button" data-period="quarter">Last 3 months</button>
-              <button type="button" data-period="year" class="on">Last year</button>
-              <button type="button" data-period="all">Everything</button>
-            </div>
-          </div>
-          <label class="control">
-            <span class="control-label">For</span>
-            <select id="dept" aria-label="Department"><option value="">All departments</option></select>
-          </label>
-        </div>
-
-        <dl id="figures" class="figures"></dl>
-
-        <h2>How busy have we been?</h2>
-        <p id="trend-note" class="soft">New patients admitted over time.</p>
-        <div id="trend" class="chart" aria-live="polite"></div>
-
-        <h2>Which departments see the most patients?</h2>
-        <ul id="dept-bars" class="bars"></ul>
-      </section>
-
-      <!-- Beds -->
-      <section id="beds" aria-labelledby="beds-title">
-        <p class="eyebrow">Beds</p>
-        <h2 id="beds-title" class="big">When are beds fullest?</h2>
-        <p id="pattern-note" class="soft"></p>
-        <div id="pattern" class="chart"></div>
-        <div class="legend">
-          <span><i class="swatch solid"></i> Weekdays</span>
-          <span><i class="swatch dashed"></i> Weekends</span>
-        </div>
-
-        <h2>How full is each department?</h2>
-        <p class="soft">The share of beds in use, on average. A thin line marks the busiest moment.</p>
-        <ul id="bed-bars" class="bars"></ul>
-      </section>
-
-      <!-- Worth a look -->
-      <section id="attention" aria-labelledby="att-title">
-        <p class="eyebrow">Worth a look</p>
-        <h2 id="att-title" class="big">Days and hours that were out of the ordinary.</h2>
-        <p class="soft">We compare every day and every hour with what is normal for that department, that weekday and that time. These are the ones that stood out, in either direction.</p>
-        <div class="controls tight">
-          <div id="att-filter" class="seg" role="group" aria-label="Which to show">
-            <button type="button" data-filter="serious" class="on">Urgent and important</button>
-            <button type="button" data-filter="all">Everything unusual</button>
-          </div>
-        </div>
-        <ul id="notes" class="notes" aria-live="polite"></ul>
-        <p><button id="more" class="link" type="button" hidden></button></p>
-      </section>
-
-      <!-- Run an analysis -->
-      <section id="analysis" aria-labelledby="run-title">
-        <p class="eyebrow">Refresh</p>
-        <h2 id="run-title" class="big">Look again at the latest events.</h2>
-        <p id="run-intro" class="soft">Choose what you would like us to work out. It runs in the background across several workers, so you can keep reading while it finishes.</p>
-
-        <form id="run-form" class="run">
-          <label><span>What to work out</span>
-            <select id="run-type">
-              <option value="full_analysis">A complete picture</option>
-              <option value="admission_patterns">Admissions only</option>
-              <option value="resource_utilisation">Bed use only</option>
-              <option value="anomaly_detection">Unusual activity only</option>
-            </select>
-          </label>
-          <label><span>From</span><input id="run-from" type="date" required></label>
-          <label><span>To</span><input id="run-to" type="date" required></label>
-          <button class="primary" type="submit" id="run-go">Start</button>
-        </form>
-
-        <div id="progress" class="progress" hidden aria-live="polite">
-          <p id="progress-text"></p>
-          <div class="line"><i id="progress-fill"></i></div>
-        </div>
-        <p id="run-viewer" class="soft" hidden>You can read everything on this page. Starting a fresh analysis is for analysts.</p>
-      </section>
-
-      <!-- Behind the scenes (admins) -->
-      <section id="behind" aria-labelledby="behind-title" hidden>
-        <p class="eyebrow">Behind the scenes</p>
-        <h2 id="behind-title" class="big">How the system itself is doing.</h2>
-        <ul id="health" class="plain"></ul>
-      </section>
-
-    </main>
-
-    <footer class="foot">
-      <p>Everything shown is demonstration data. No real patient information is used.</p>
-      <p><a href="/docs">For developers: the API</a></p>
-    </footer>
+    <div>
+      <div class="topbar">
+        <button id="menu" type="button" aria-label="Open menu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+        <b id="topbar-title">Overview</b>
+      </div>
+      <main class="main"><div class="page" id="page" tabindex="-1"></div></main>
+    </div>
   </div>
 
-  <script src="app.js" defer></script>
+  <script type="module" src="js/main.js"></script>
 </body>
 </html>

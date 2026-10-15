@@ -466,8 +466,9 @@ def test_ui_is_served_and_root_redirects(client):
     r = client.get("/", follow_redirects=False)
     assert r.status_code in (301, 302, 307) and r.headers["location"] == "/app/"
     page = client.get("/app/")
-    assert page.status_code == 200 and "Hospital Activity" in page.text
-    assert client.get("/app/app.js").status_code == 200 and client.get("/app/styles.css").status_code == 200
+    assert page.status_code == 200 and "Hospital Event Analytics" in page.text
+    for asset in ("css/app.css", "js/main.js", "js/api.js", "js/charts.js", "js/pages/overview.js", "js/pages/ingestion.js"):
+        assert client.get(f"/app/{asset}").status_code == 200, asset
 
 
 def test_overview_endpoints_summarise_the_analytics_tables(client, auth, loaded, monkeypatch):
