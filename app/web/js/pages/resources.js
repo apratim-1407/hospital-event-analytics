@@ -1,6 +1,6 @@
 import { api, friendly } from '../api.js';
-import { $, esc, n0, pct, hourWord, dShort, dWeekday, addDays, isoDay, parseDay, badge, skBlock, skRows, skMetrics, emptyState, callout } from '../util.js';
-import { state, currentWindow, getSummary, getPattern, deptName } from '../data.js';
+import { $, esc, n0, pct, signed, hourWord, dShort, dWeekday, addDays, isoDay, parseDay, badge, skBlock, skRows, skMetrics, emptyState, callout } from '../util.js';
+import { state, currentWindow, previousWindow, getSummary, getPattern, deptName, vsPrevious, occupied, bedsOf, freeBeds, bedUse } from '../data.js';
 import { lineChart, rows, heatmap, COLOR, niceMax } from '../charts.js';
 import { head, filterTools, bindFilters, rangeText } from '../ui.js';
 
@@ -28,7 +28,8 @@ export default {
       </section>`;
     bindFilters(root, ctx.rerender);
 
-    const [sum, pat] = await Promise.allSettled([getSummary(w), getPattern(w)]);
+    const pw = state.period === 'all' ? null : previousWindow(w);
+    const [sum, pat, prev] = await Promise.allSettled([getSummary(w), getPattern(w), pw ? getSummary(pw) : Promise.resolve(null)]);
     if (!ctx.current()) return;
     if (sum.status !== 'fulfilled') { $('#rs-metrics', root).innerHTML = callout('bad', `We could not load utilisation. ${esc(friendly(sum.reason))}`); return; }
     const s = sum.value;
@@ -36,28 +37,38 @@ export default {
     const depts = s.departments.filter((d) => d.bed_use_avg != null).map((d) => ({ ...d, st: status(d, hours) }));
     if (!depts.length) { $('#rs-metrics', root).innerHTML = emptyState({ title: 'No bed data for this period', text: 'Run a resource utilisation analysis that covers these dates.', small: true }); return; }
 
-    /* key figures */
+    /* key figures, counts first, each set against the period before */
+    const vs = vsPrevious();
+    const before = prev.status === 'fulfilled' && prev.value ? new Map(prev.value.departments.map((d) => [d.department_id, d])) : null;
     const cap = depts.reduce((a, d) => a + d.bed_capacity, 0);
-    const avg = depts.reduce((a, d) => a + d.bed_use_avg * d.bed_capacity, 0) / cap;
+    const avg = bedUse(depts);
+    const avgBefore = before ? bedUse(prev.value.departments) : null;
     const tightest = [...depts].sort((a, b) => b.bed_use_peak - a.bed_use_peak)[0];
     const over = depts.reduce((a, d) => a + d.hours_over_90, 0);
+    const overBefore = before ? [...before.values()].reduce((a, d) => a + d.hours_over_90, 0) : null;
     const flagged = depts.filter((d) => d.st.rank === 3);
     $('#rs-metrics', root).innerHTML = `<div class="metrics">
-      <div class="metric"><p class="k">Average utilisation</p><p class="v num">${pct(avg)}</p><p class="d">of ${n0(cap)} beds</p></div>
-      <div class="metric"><p class="k">Busiest moment</p><p class="v num">${pct(tightest.bed_use_peak)}</p><p class="d">${esc(tightest.name)}</p></div>
-      <div class="metric"><p class="k">Hours at 90% or more</p><p class="v num">${n0(over)}</p><p class="d">department-hours</p></div>
+      <div class="metric"><p class="k">Beds in use (average)</p><p class="v num">${n0(occupied(avg, cap))} of ${n0(cap)}</p><p class="d">${pct(avg)} · ${n0(freeBeds(avg, cap))} free</p>${avgBefore == null ? '' : `<p class="d">${avg >= avgBefore ? '↑' : '↓'} ${Math.abs(Math.round((avg - avgBefore) * 100))} pts ${vs}</p>`}</div>
+      <div class="metric"><p class="k">Fullest moment</p><p class="v num">${bedsOf(tightest.bed_use_peak, tightest.bed_capacity)}</p><p class="d">${esc(tightest.name)} · ${pct(tightest.bed_use_peak)}</p></div>
+      <div class="metric"><p class="k">Hours at 90% or more</p><p class="v num">${n0(over)}</p><p class="d">department-hours</p>${overBefore == null ? '' : `<p class="d">${over === overBefore ? 'unchanged' : `${over > overBefore ? '↑' : '↓'} ${n0(Math.abs(over - overBefore))}`} ${vs}</p>`}</div>
       <div class="metric"><p class="k">Departments flagged</p><p class="v num">${flagged.length}</p><p class="d ${flagged.length ? 'bad' : 'good'}">${flagged.length ? esc(flagged.map((d) => d.name).join(', ')) : 'none constrained'}</p></div></div>`;
     if (flagged.length) {
       const f = $('#rs-flag', root); f.hidden = false;
       f.innerHTML = callout('warn', `<b>${esc(flagged.map((d) => d.name).join(', '))}</b> ${flagged.length === 1 ? 'was' : 'were'} at 90% or more of beds for ${n0(flagged.reduce((a, d) => a + d.hours_over_90, 0))} hours in this period. Review the day-by-day view below for when.`);
     }
 
-    /* department table with threshold line */
+    /* department table: beds free first, with the 90% hours set against the period before */
     const list = [...depts].sort((a, b) => b.st.rank - a.st.rank || b.bed_use_avg - a.bed_use_avg);
-    $('#rs-table', root).innerHTML = `<table class="tbl"><thead><tr><th>Department</th><th style="width:34%">Average, and busiest hour</th><th class="r">Average</th><th class="r">Busiest</th><th class="r">Hours at 90%+</th><th>Status</th></tr></thead><tbody>${list.map((d) => `<tr>
+    const hoursMove = (d) => {
+      const was = before?.get(d.department_id)?.hours_over_90;
+      return was == null ? '' : `<span class="sub">${d.hours_over_90 === was ? 'same as before' : `${signed(d.hours_over_90 - was)} vs before`}</span>`;
+    };
+    $('#rs-table', root).innerHTML = `<table class="tbl"><thead><tr><th>Department</th><th style="width:26%">Average, and busiest hour</th><th class="r">Beds in use, average</th><th class="r">Busiest hour</th><th class="r">Hours at 90%+</th><th>Status</th></tr></thead><tbody>${list.map((d) => `<tr>
       <td class="strong">${esc(d.name)}<span class="sub">${n0(d.bed_capacity)} beds</span></td>
       <td><span class="track"><i class="${d.st.rank === 3 ? 'red' : d.st.rank === 2 ? 'amber' : ''}" style="width:${Math.min(d.bed_use_avg, 1) * 100}%"></i><u style="left:90%"></u><em style="left:calc(${Math.min(d.bed_use_peak, 1) * 100}% - 1px)"></em></span></td>
-      <td class="r num">${pct(d.bed_use_avg)}</td><td class="r num">${pct(d.bed_use_peak)}</td><td class="r num">${n0(d.hours_over_90)}</td><td>${badge(d.st.cls, d.st.label)}</td></tr>`).join('')}</tbody></table>`;
+      <td class="r num">${bedsOf(d.bed_use_avg, d.bed_capacity)}<span class="sub">${pct(d.bed_use_avg)} · ${n0(freeBeds(d.bed_use_avg, d.bed_capacity))} free</span></td>
+      <td class="r num">${bedsOf(d.bed_use_peak, d.bed_capacity)}<span class="sub">${pct(d.bed_use_peak)}</span></td>
+      <td class="r num">${n0(d.hours_over_90)}${hoursMove(d)}</td><td>${badge(d.st.cls, d.st.label)}</td></tr>`).join('')}</tbody></table>`;
 
     /* across the day */
     if (pat.status === 'fulfilled') {

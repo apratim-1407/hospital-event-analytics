@@ -1,9 +1,15 @@
 /* Shared interface pieces: page header, period/department filters, anomaly wording. */
 import { $, $$, esc, dFull, dShort, dWeekday, hourWord, isoDay, n0, n1, pct, signed, SEVERITY, METRIC, badge, icon } from './util.js';
-import { PERIODS, state } from './data.js';
+import { PERIODS, state, deptBeds, occupied } from './data.js';
 
 export function head(title, description, tools = '') {
   return `<header class="head"><div><h1>${esc(title)}</h1>${description ? `<p>${description}</p>` : ''}</div><div class="tools">${tools}</div></header>`;
+}
+
+/** Tab strip shared by the two pages that live under Settings. */
+export function settingsTabs(active) {
+  const tab = (id, label) => `<a href="#/${id}"${active === id ? ' aria-current="page"' : ''}>${label}</a>`;
+  return `<nav class="tabs" aria-label="Settings"><span>Settings</span>${tab('jobs', 'Analyses')}${tab('ingestion', 'Integrations')}</nav>`;
 }
 
 /** Period segmented control + department select. Pass what to show. */
@@ -41,7 +47,10 @@ export function describe(a) {
   const o = a.observed_value, x = a.expected_value, up = a.z_score >= 0;
   let detail, magnitude;
   if (a.metric_name === 'occupancy_rate') {
-    detail = `${pct(o)} of beds in use, against ${pct(x)} expected${o >= 1 ? ' (over capacity)' : ''}`;
+    const cap = deptBeds(a.department_id);
+    detail = cap
+      ? `${occupied(o, cap)} of ${cap} beds in use (${pct(o)}), against about ${occupied(x, cap)} expected${o >= 1 ? ', over capacity' : ''}`
+      : `${pct(o)} of beds in use, against ${pct(x)} expected${o >= 1 ? ' (over capacity)' : ''}`;
     magnitude = signed(Math.round((o - x) * 100), ' pts');
   } else {
     const unit = daily ? 'a day' : 'an hour';

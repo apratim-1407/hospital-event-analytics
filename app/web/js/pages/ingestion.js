@@ -1,7 +1,7 @@
 import { api, apiWithKey, isAdmin, friendly } from '../api.js';
 import { $, $$, esc, n0, ago, dFull, badge, callout, icon, toast, sleep, skRows, emptyState } from '../util.js';
 import { state } from '../data.js';
-import { head } from '../ui.js';
+import { head, settingsTabs } from '../ui.js';
 
 const EVENT_TYPES = [['admission', 'Admission'], ['discharge', 'Discharge'], ['transfer', 'Transfer in'], ['icu_admit', 'ICU admission'], ['icu_discharge', 'ICU discharge'], ['surgery', 'Surgery']];
 const SOURCES = [['emergency', 'Emergency'], ['referral', 'Referral'], ['transfer', 'Transfer'], ['scheduled', 'Scheduled']];
@@ -15,7 +15,7 @@ const keyError = (e) => (e.status === 401 ? 'That API key was not accepted. Chec
 export default {
   async render(root, ctx) {
     const nowLocal = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-    root.innerHTML = head('Data ingestion', 'Send hospital events into the system, then refresh the analysis so they show up in the results.') + `
+    root.innerHTML = settingsTabs('ingestion') + head('Integrations', 'Send hospital events into the system, then refresh the analysis so they show up in the results.') + `
       <ol class="steps">
         <li><div><h3>Connect your event source</h3><p class="lead">Systems send events with an API key rather than a personal login, so a key can be revoked without affecting anyone's account.</p></div>
           <div class="body"><div class="form"><label class="field" style="min-width:min(26rem,100%)"><span>API key</span><input type="password" id="ig-key" autocomplete="off" spellcheck="false" placeholder="hea_…" value="${esc(key)}"></label>

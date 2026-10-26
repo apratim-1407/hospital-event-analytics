@@ -1,7 +1,7 @@
 import { api, isAnalyst, friendly } from '../api.js';
 import { $, $$, esc, n0, badge, dFull, dDayTime, ago, duration, isoDay, addDays, STATUS, JOB_TYPE, skRows, emptyState, callout, icon, toast } from '../util.js';
 import { state, deptName } from '../data.js';
-import { head } from '../ui.js';
+import { head, settingsTabs } from '../ui.js';
 
 const tone = { running: 'run', completed: 'completed', failed: 'failed', partial: 'partial', queued: 'queued', cancelled: 'cancelled' };
 const resultsPage = { admission_patterns: '#/admissions', resource_utilisation: '#/resources', anomaly_detection: '#/anomalies', full_analysis: '#/overview' };
@@ -18,7 +18,7 @@ export default {
     const defTo = state.range?.last ?? today;
     const defFrom = isoDay(addDays(new Date(defTo + 'T00:00:00Z'), -29));
 
-    root.innerHTML = head('Analytics jobs', 'Analyses run in the background across the worker pool, so you can keep working while they finish.', `
+    root.innerHTML = settingsTabs('jobs') + head('Analyses', 'Analyses run in the background across the worker pool, so you can keep working while they finish.', `
       <label class="sr" for="jb-status">Status</label>
       <select id="jb-status"><option value="">All statuses</option>${Object.entries(STATUS).map(([k, l]) => `<option value="${k}">${l}</option>`).join('')}</select>
       <button class="btn primary" id="jb-new-btn" aria-expanded="false" aria-controls="jb-new">${icon('plus')} New analysis</button>`) + `

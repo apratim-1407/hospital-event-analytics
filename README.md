@@ -76,18 +76,20 @@ docker compose up -d --scale worker=4 --no-recreate worker
 ## The web interface
 
 `http://localhost:8000/` is a light, minimal dashboard for hospital administrators. It uses open layouts, thin dividers and
-one blue accent instead of boxed cards, and plain wording ("Bed utilisation", "Unusual workloads"). Seven pages share one
-shell:
+one blue accent instead of boxed cards, and plain wording ("Bed utilisation", "Unusual workloads"). The menu follows the
+questions an administrator asks, so it has five pages; running analyses and connecting event sources are set-up tasks and
+sit under Settings (analysts and administrators only). Bed figures are shown as counts first ("26 of 30 beds, 4 free"), with
+the percentage beside them.
 
 | Page | What it shows |
 |---|---|
 | Overview | key figures with change vs the previous period, admissions trend, departments compared, bed utilisation, recent unusual workloads and analyses |
 | Admission patterns | trend with an optional previous-period overlay, busiest weekdays, admission sources, a sortable department table |
-| Resource utilisation | per-department status (healthy / watch / constrained), the daily rhythm, a day-by-hour heatmap of where beds were tight |
+| Resource utilisation | beds in use and free per department, hours at 90%+ against the previous period, status (healthy / watch / constrained), the daily rhythm, a day-by-hour heatmap of where beds were tight |
 | Unusual workloads | a filterable list by severity, measure and direction; each row expands to its detail |
-| Analytics jobs | job history with live progress, details and concise errors, cancel, run again, and a guided "new analysis" form |
-| Data ingestion | three steps: connect with an API key, send a single event or register a bulk file, check what arrived; admins manage keys |
-| Reports | CSV exports of the existing data and a printable period summary |
+| Reports | a printable one-page period summary (first), and CSV exports of the existing data |
+| Settings, Analyses | job history with live progress, details and concise errors, cancel, run again, and a guided "new analysis" form (`#/jobs`) |
+| Settings, Integrations | three steps: connect with an API key, send a single event or register a bulk file, check what arrived; admins manage keys (`#/ingestion`) |
 
 It is plain HTML/CSS/JS with no build step and no external requests (hand-drawn SVG charts), served by the API itself from
 `app/web/`. It is responsive down to phone width, keyboard accessible, and role-aware (viewers read, analysts also run

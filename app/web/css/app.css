@@ -52,6 +52,14 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .nav a:hover { background: #F3F6FB; color: var(--ink); }
 .nav a[aria-current="page"] { background: var(--blue-soft); color: var(--blue-ink); }
 .nav svg { flex: none; opacity: .9; }
+.nav .gap { height: 0.9rem; }
+
+/* Settings tab strip */
+.tabs { display: flex; align-items: baseline; gap: 1.4rem; margin: 0 0 1.6rem; border-bottom: 1px solid var(--line); overflow: auto hidden; }
+.tabs span { color: var(--slate); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; padding-bottom: 0.7rem; }
+.tabs a { color: var(--slate); font-weight: 500; text-decoration: none; padding-bottom: 0.7rem; margin-bottom: -1px; border-bottom: 2px solid transparent; white-space: nowrap; }
+.tabs a:hover { color: var(--ink); }
+.tabs a[aria-current="page"] { color: var(--blue-ink); border-bottom-color: var(--blue); }
 .side-foot { margin-top: auto; padding: 0.8rem 0.6rem 0; border-top: 1px solid var(--line); display: grid; gap: 0.6rem; font-size: 12.5px; }
 .status { display: flex; align-items: center; gap: 0.5rem; color: var(--slate); }
 .status i { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); }

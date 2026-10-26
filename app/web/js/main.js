@@ -1,5 +1,5 @@
 /* Application shell: sign-in, sidebar, hash router, health indicator. */
-import { session, login, clearSession, health, friendly } from './api.js';
+import { session, login, clearSession, health, friendly, isAnalyst } from './api.js';
 import { $, $$, esc, icon, callout } from './util.js';
 import { loadDepartments } from './data.js';
 
@@ -11,10 +11,13 @@ import jobs from './pages/jobs.js';
 import ingestion from './pages/ingestion.js';
 import reports from './pages/reports.js';
 
+/* [id, title, page, section]: Analyses and Integrations are reached through Settings, not the main menu. */
 const ROUTES = [
   ['overview', 'Overview', overview], ['admissions', 'Admission patterns', admissions], ['resources', 'Resource utilisation', resources],
-  ['anomalies', 'Unusual workloads', anomalies], ['jobs', 'Analytics jobs', jobs], ['ingestion', 'Data ingestion', ingestion], ['reports', 'Reports', reports],
+  ['anomalies', 'Unusual workloads', anomalies], ['reports', 'Reports', reports],
+  ['jobs', 'Settings · Analyses', jobs, 'settings'], ['ingestion', 'Settings · Integrations', ingestion, 'settings'],
 ];
+const MENU = ROUTES.filter((r) => !r[3]);
 const ROLE = { viewer: 'Viewer', analyst: 'Analyst', admin: 'Administrator' };
 
 let token = 0;       // identifies the latest navigation; stale renders stop themselves
@@ -44,7 +47,8 @@ function renderRoute() {
   const route = ROUTES.find((r) => r[0] === id) ?? ROUTES[0];
   const my = ++token;
   cleanup?.(); cleanup = null;
-  $$('#nav a').forEach((a) => (a.getAttribute('href') === `#/${route[0]}` ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current')));
+  const here = route[3] === 'settings' ? '#/jobs' : `#/${route[0]}`;
+  $$('#nav a').forEach((a) => (a.getAttribute('href') === here ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current')));
   document.title = `${route[1]} · Hospital Event Analytics`;
   $('#topbar-title').textContent = route[1];
   document.body.classList.remove('menu');
@@ -68,7 +72,8 @@ window.addEventListener('hashchange', () => booted && renderRoute());
 
 /* ── sidebar + health ── */
 function buildNav() {
-  $('#nav').innerHTML = ROUTES.map(([id, label]) => `<a href="#/${id}">${icon(id)}<span>${label}</span></a>`).join('');
+  const settings = isAnalyst() ? `<div class="gap"></div><a href="#/jobs">${icon('settings')}<span>Settings</span></a>` : '';
+  $('#nav').innerHTML = MENU.map(([id, label]) => `<a href="#/${id}">${icon(id)}<span>${label}</span></a>`).join('') + settings;
 }
 async function pollHealth() {
   const h = await health();
@@ -82,6 +87,7 @@ document.addEventListener('click', (e) => { if (document.body.classList.contains
 /* ── start ── */
 async function boot() {
   show('shell');
+  buildNav();
   $('#who-email').textContent = session.email ?? '';
   $('#who-role').textContent = ROLE[session.role] ?? '';
   const root = $('#page');

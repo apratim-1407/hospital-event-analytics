@@ -1,6 +1,6 @@
 import { api, isAnalyst, friendly } from '../api.js';
 import { $, esc, n0, n1, pct, stayWord, dFull, hourWord, callout, icon, toast, skRows, badge, JOB_TYPE, STATUS, METRIC } from '../util.js';
-import { state, currentWindow, getSummary, getAnomalies, fetchAll, deptName, deptQuery, bedUse, countBySeverity } from '../data.js';
+import { state, currentWindow, getSummary, getAnomalies, fetchAll, deptName, deptQuery, bedUse, countBySeverity, bedsOf } from '../data.js';
 import { head, filterTools, bindFilters, rangeText } from '../ui.js';
 
 let dataset = 'admissions';
@@ -54,13 +54,13 @@ export default {
     const w = currentWindow();
     const options = Object.entries(DATASETS).filter(([, d]) => !d.needsAnalyst || isAnalyst());
     if (!options.some(([k]) => k === dataset)) dataset = 'admissions';
-    root.innerHTML = head('Reports', 'Take the results with you: download the data for a spreadsheet, or print a summary of the period.', filterTools()) + `
+    root.innerHTML = head('Reports', 'A one-page summary to print for the morning huddle or send to a director, and the underlying data for a spreadsheet.', filterTools()) + `
+      <section class="section" id="rp-summary"><div class="sec-head"><h2>Period summary</h2><p class="noprint"><button class="btn primary sm" id="rp-print">${icon('print', 14)} Print or save as PDF</button></p></div>${skRows(5)}</section>
+      <hr class="rule">
       <section class="section"><div class="sec-head"><h2>Export data</h2><p id="rp-note"></p></div>
         <form class="form" id="rp-form"><label class="field"><span>What to export</span><select id="rp-set" style="min-width:18rem">${options.map(([k, d]) => `<option value="${k}"${k === dataset ? ' selected' : ''}>${d.label}</option>`).join('')}</select></label>
-          <button class="btn primary" type="submit" id="rp-go">${icon('download')} Download CSV</button></form>
+          <button class="btn" type="submit" id="rp-go">${icon('download')} Download CSV</button></form>
         <div id="rp-out" style="margin-top:1rem" aria-live="polite"></div></section>
-      <hr class="rule">
-      <section class="section" id="rp-summary"><div class="sec-head"><h2>Period summary</h2><p class="noprint"><button class="btn sm" id="rp-print">${icon('print', 14)} Print or save as PDF</button></p></div>${skRows(5)}</section>
       <section class="section" id="rp-measured" hidden></section>`;
     bindFilters(root, ctx.rerender);
 
@@ -88,9 +88,9 @@ export default {
     if (sum.status !== 'fulfilled') host.querySelector('.sec-head').insertAdjacentHTML('afterend', callout('bad', esc(friendly(sum.reason))));
     else {
       const s = sum.value, use = bedUse(s.departments), sev = notes.status === 'fulfilled' ? countBySeverity(notes.value) : null;
-      host.innerHTML = `<div class="sec-head"><h2>Period summary</h2><p class="noprint"><button class="btn sm" id="rp-print2">${icon('print', 14)} Print or save as PDF</button></p></div>
+      host.innerHTML = `<div class="sec-head"><h2>Period summary</h2><p class="noprint"><button class="btn primary sm" id="rp-print2">${icon('print', 14)} Print or save as PDF</button></p></div>
         <p style="max-width:44rem;font-size:15px">Between <b>${rangeText(w)}</b>${state.dept ? ` in <b>${esc(deptName(state.dept))}</b>` : ''}, <b>${n0(s.totals.admissions)}</b> patients were admitted and <b>${n0(s.totals.discharges)}</b> discharged, with an average stay of <b>${esc(stayWord(s.totals.avg_stay_hours))}</b>. ${use != null ? `Beds were <b>${pct(use)}</b> in use on average. ` : ''}${sev ? `We found <b>${n0(sev.critical + sev.high + sev.moderate)}</b> unusual workload periods, <b>${sev.critical}</b> of them critical.` : ''}</p>
-        <div class="tbl-wrap" style="margin-top:1.4rem"><table class="tbl"><thead><tr><th>Department</th><th class="r">Admitted</th><th class="r">Average stay</th><th class="r">Beds in use</th><th class="r">Busiest</th><th class="r">Hours at 90%+</th></tr></thead><tbody>${s.departments.map((d) => `<tr><td class="strong">${esc(d.name)}</td><td class="r num">${n0(d.admissions)}</td><td class="r num">${esc(stayWord(d.avg_stay_hours))}</td><td class="r num">${d.bed_use_avg != null ? pct(d.bed_use_avg) : '—'}</td><td class="r num">${d.bed_use_peak != null ? pct(d.bed_use_peak) : '—'}</td><td class="r num">${n0(d.hours_over_90)}</td></tr>`).join('')}</tbody></table></div>
+        <div class="tbl-wrap" style="margin-top:1.4rem"><table class="tbl"><thead><tr><th>Department</th><th class="r">Admitted</th><th class="r">Average stay</th><th class="r">Beds in use, average</th><th class="r">Busiest hour</th><th class="r">Hours at 90%+</th></tr></thead><tbody>${s.departments.map((d) => `<tr><td class="strong">${esc(d.name)}</td><td class="r num">${n0(d.admissions)}</td><td class="r num">${esc(stayWord(d.avg_stay_hours))}</td><td class="r num">${d.bed_use_avg != null ? `${bedsOf(d.bed_use_avg, d.bed_capacity)} (${pct(d.bed_use_avg)})` : '—'}</td><td class="r num">${d.bed_use_peak != null ? `${bedsOf(d.bed_use_peak, d.bed_capacity)} (${pct(d.bed_use_peak)})` : '—'}</td><td class="r num">${n0(d.hours_over_90)}</td></tr>`).join('')}</tbody></table></div>
         <p class="slate" style="margin-top:1rem;font-size:12.5px">Generated ${esc(dFull(new Date()))}. Demonstration data only.</p>`;
       $('#rp-print2', root)?.addEventListener('click', () => window.print());
     }

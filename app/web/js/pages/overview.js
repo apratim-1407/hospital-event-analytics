@@ -1,6 +1,6 @@
 import { api, isAnalyst, friendly } from '../api.js';
 import { $, esc, n0, pct, stayWord, dFull, dShort, dMonth, dWeekday, parseDay, ago, duration, badge, STATUS, JOB_TYPE, skMetrics, skBlock, skRows, emptyState, callout, icon } from '../util.js';
-import { state, currentWindow, previousWindow, getSummary, getAnomalies, deptName, bedUse, countBySeverity, periodLabel } from '../data.js';
+import { state, currentWindow, previousWindow, getSummary, getAnomalies, deptName, bedUse, countBySeverity, vsPrevious, occupied, bedsOf, freeBeds } from '../data.js';
 import { lineChart, rows, COLOR } from '../charts.js';
 import { head, filterTools, bindFilters, anomalyList, rangeText, changeText } from '../ui.js';
 
@@ -45,13 +45,14 @@ export default {
       const over90 = s.departments.reduce((a, d) => a + d.hours_over_90, 0);
       const sev = notes.status === 'fulfilled' ? countBySeverity(notes.value) : null;
       const urgent = sev ? sev.critical + sev.high : null;
-      const vs = `vs previous ${periodLabel()}`;
+      const vs = vsPrevious();
+      const cap = s.departments.reduce((a, d) => a + (d.bed_use_avg != null ? d.bed_capacity : 0), 0);
       const ch = p ? changeText(s.totals.admissions, p.totals.admissions) : null;
       const stayCh = p && s.totals.avg_stay_hours && p.totals.avg_stay_hours ? changeText(s.totals.avg_stay_hours, p.totals.avg_stay_hours) : null;
       m.innerHTML = `<div class="metrics">
         <div class="metric"><p class="k">Patients admitted</p><p class="v num">${n0(s.totals.admissions)}</p><p class="d">${ch ? `${ch} ${vs}` : `${s.days} days`}</p></div>
         <div class="metric"><p class="k">Average stay</p><p class="v num">${esc(stayWord(s.totals.avg_stay_hours))}</p><p class="d">${stayCh ? `${stayCh} ${vs}` : 'per patient'}</p></div>
-        <div class="metric"><p class="k">Bed utilisation</p><p class="v num">${use != null ? pct(use) : '—'}</p><p class="d ${over90 ? 'warn' : ''}">${over90 ? `${n0(over90)} department-hours at 90%+` : usePrev != null ? `${use >= usePrev ? '↑' : '↓'} ${Math.abs(Math.round((use - usePrev) * 100))} pts ${vs}` : 'on average'}</p></div>
+        <div class="metric"><p class="k">Beds in use (average)</p><p class="v num">${use != null ? `${n0(occupied(use, cap))} of ${n0(cap)}` : '—'}</p><p class="d ${over90 ? 'warn' : ''}">${use != null ? `${pct(use)} · ${n0(freeBeds(use, cap))} free` : ''}</p>${usePrev != null ? `<p class="d">${use >= usePrev ? '↑' : '↓'} ${Math.abs(Math.round((use - usePrev) * 100))} pts ${vs}</p>` : ''}</div>
         <div class="metric"><p class="k">Unusual workloads</p><p class="v num">${urgent == null ? '—' : n0(urgent)}</p><p class="d ${sev?.critical ? 'bad' : ''}">${sev ? `${sev.critical} critical · ${sev.high} high · ${sev.moderate} moderate` : ''}</p></div>
       </div>`;
 
@@ -75,7 +76,7 @@ export default {
       const byUse = s.departments.filter((d) => d.bed_use_avg != null).sort((a, b) => b.bed_use_avg - a.bed_use_avg);
       if (!byUse.length) $('#ov-beds', root).innerHTML = `<li><span class="slate">No bed data for this period.</span></li>`;
       else rows($('#ov-beds', root), byUse.map((d) => ({
-        name: d.name, width: Math.min(d.bed_use_avg, 1) * 100, value: pct(d.bed_use_avg), marker: d.bed_use_peak, ref: 0.9,
+        name: d.name, width: Math.min(d.bed_use_avg, 1) * 100, value: `${bedsOf(d.bed_use_avg, d.bed_capacity)} · ${pct(d.bed_use_avg)}`, marker: d.bed_use_peak, ref: 0.9,
         tone: d.bed_use_avg >= 0.85 ? 'amber' : '',
       })));
     }

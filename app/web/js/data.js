@@ -17,8 +17,17 @@ export const PERIODS = [
 ];
 export const periodLabel = (p = state.period) => PERIODS.find((x) => x[0] === p)[1].toLowerCase();
 
-export const deptName = (id) => state.depts.find((d) => d.department_id === +id)?.name ?? `Department ${id}`;
+/** "vs the 30 days before": wording for comparisons with the previous period. */
+export const vsPrevious = (p = state.period) => `vs the ${{ month: '30 days', quarter: '90 days', year: '12 months' }[p] ?? 'period'} before`;
+
+/** Beds are managed as counts: "26 of 30", with the share as the second half. */
+export const occupied = (rate, cap) => Math.round(rate * cap);
+export const bedsOf = (rate, cap) => (rate == null || !cap ? '—' : `${occupied(rate, cap)} of ${cap}`);
+export const freeBeds = (rate, cap) => Math.max(0, cap - occupied(rate, cap));
+
+export const deptName =(id) => state.depts.find((d) => d.department_id === +id)?.name ?? `Department ${id}`;
 export const deptQuery = (d = state.dept) => (d ? `&department_id=${d}` : '');
+export const deptBeds = (id) => state.depts.find((d) => d.department_id === +id)?.bed_capacity ?? null;
 
 /** The selected period as {start, end, days}, clamped to the dates that have results. */
 export function currentWindow(period = state.period) {

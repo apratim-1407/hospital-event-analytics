@@ -1,8 +1,9 @@
 import { friendly } from '../api.js';
 import { $, $$, esc, n0, badge, dFull, dDayTime, SEVERITY, METRIC, skRows, skMetrics, emptyState, callout, icon } from '../util.js';
-import { state, currentWindow, getAnomalies, deptName, countBySeverity } from '../data.js';
+import { state, currentWindow, getAnomalies, deptName, countBySeverity, deptBeds, occupied } from '../data.js';
 import { head, filterTools, bindFilters, describe, rangeText } from '../ui.js';
 
+const bedFacts = (a, rate) => { const cap = deptBeds(a.department_id); return `${cap ? `${occupied(rate, cap)} of ${cap} beds · ` : ''}${(rate * 100).toFixed(1)}%`; };
 const local = { severity: 'all', metric: '', direction: '', shown: 20 };
 
 export default {
@@ -53,9 +54,9 @@ export default {
         const a = list[+tr.dataset.i], d = describe(a);
         tr.insertAdjacentHTML('afterend', `<tr class="detail"><td colspan="6"><dl class="facts">
           <div><dt>Window</dt><dd>${esc(dDayTime(a.window_start))} → ${esc(dDayTime(a.window_end))} UTC</dd></div>
-          <div><dt>Observed</dt><dd class="num">${esc(a.metric_name === 'occupancy_rate' ? (a.observed_value * 100).toFixed(1) + '%' : a.observed_value.toFixed(1))}</dd></div>
-          <div><dt>Expected</dt><dd class="num">${esc(a.metric_name === 'occupancy_rate' ? (a.expected_value * 100).toFixed(1) + '%' : a.expected_value.toFixed(1))}</dd></div>
-          <div><dt>Distance from normal</dt><dd class="num">${Math.abs(a.z_score).toFixed(1)}× the usual variation, ${d.up ? 'higher' : 'lower'}</dd></div>
+          <div><dt>Observed</dt><dd class="num">${esc(a.metric_name === 'occupancy_rate' ? bedFacts(a, a.observed_value) : a.observed_value.toFixed(1))}</dd></div>
+          <div><dt>Expected</dt><dd class="num">${esc(a.metric_name === 'occupancy_rate' ? bedFacts(a, a.expected_value) : a.expected_value.toFixed(1))}</dd></div>
+          <div><dt>Why it was flagged</dt><dd>${d.up ? 'Higher' : 'Lower'} than the usual ups and downs for this department, weekday and time of day: ${Math.abs(a.z_score).toFixed(1)}× the normal variation</dd></div>
           <div><dt>Found by analysis</dt><dd class="mono">${esc(a.job_id.slice(0, 8))}</dd></div></dl></td></tr>`);
       };
       $$('tr.click', host).forEach((tr) => {
