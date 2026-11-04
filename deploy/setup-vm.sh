@@ -9,6 +9,7 @@
 #
 # It installs Docker if needed, writes .env with freshly generated secrets, opens ports 80/443,
 # builds and starts the stack, loads the demo data and prints the link and logins.
+# Small VM (1-2 GB RAM)?  DEMO_EVENTS=200000 WORKERS=1 ./deploy/setup-vm.sh
 set -euo pipefail
 cd "$(dirname "$0")/.."
 DOMAIN="${1:-}"
@@ -66,7 +67,7 @@ for _ in $(seq 1 60); do
 done
 
 say "loading the demo data and running the first analysis (a few minutes)"
-./deploy/seed-demo.sh
+./deploy/seed-demo.sh "${DEMO_EVENTS:-1000000}"
 
 set -a; . ./.env; set +a
 cat <<MSG

@@ -69,6 +69,10 @@ It uses its own project name (`hospital-prod`) and volumes, so it does not touch
 A temporary public link to a machine at home can be made with any HTTP tunnel, but it only lives while the
 machine, Docker and the tunnel are running.
 
+If Oracle has no Ampere capacity in your region ("Out of host capacity"), retry in a few minutes or pick another
+availability domain. As a last resort the free `VM.Standard.E2.1.Micro` (1 GB) works with a smaller dataset:
+`DEMO_EVENTS=200000 WORKERS=1 PG_SHARED_BUFFERS=128MB ./deploy/setup-vm.sh` (add 2 GB of swap first).
+
 ## Settings that matter
 
 | Variable | Purpose |
