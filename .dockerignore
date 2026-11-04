@@ -1,9 +1,14 @@
 .git
 .env
+.env.*
 .venv
 __pycache__
 *.pyc
 .pytest_cache
 data/
-benchmarks/
+# Keep only the small result files the Reports page serves, not the Locust HTML/CSV output.
+benchmarks/*
+!benchmarks/results.json
+!benchmarks/loadtest_results.json
+!benchmarks/failure_evidence
 *.md

@@ -13,8 +13,10 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
-RUN pip install -r requirements.txt
+# constraints.txt pins every transitive package to the versions the system was tested with. Without it a
+# fresh build picks up newer releases (kombu 5.7 needs a newer redis client than the one we ship).
+COPY requirements.txt constraints.txt ./
+RUN pip install -r requirements.txt -c constraints.txt
 
 COPY . .
 
@@ -31,5 +33,5 @@ CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 FROM runtime AS dev
 USER root
 COPY requirements-dev.txt .
-RUN pip install -r requirements-dev.txt
+RUN pip install -r requirements-dev.txt -c constraints.txt
 USER app

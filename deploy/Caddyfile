@@ -1,0 +1,14 @@
+# Reverse proxy in front of the API (which also serves the web interface).
+# SITE_ADDRESS is a domain (automatic HTTPS from Let's Encrypt) or ":80" for plain HTTP.
+{$SITE_ADDRESS::80} {
+	encode zstd gzip
+
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		X-Frame-Options DENY
+		-Server
+	}
+
+	reverse_proxy api:8000
+}

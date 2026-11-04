@@ -96,6 +96,14 @@ It is plain HTML/CSS/JS with no build step and no external requests (hand-drawn 
 analyses, admins also see system health and manage keys). It only calls existing endpoints: the `/overview/*` summaries and
 the analytics, jobs, events and admin APIs. The API key typed on the ingestion page is kept in memory only.
 
+## Deploying it
+
+`docker-compose.prod.yml` is the hosted configuration: the same containers behind a Caddy reverse proxy
+(automatic HTTPS), with only ports 80/443 exposed, required secrets and restart policies. On a fresh Ubuntu VM
+(for example Oracle Cloud Always Free) it is two commands, `git clone` and `./deploy/setup-vm.sh`, which generates
+the secrets, builds the stack, loads the demo data and prints the link and logins. See
+[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
 ## What the system does
 
 ### Three planes
@@ -240,9 +248,9 @@ demonstration plan.
 
 | | 1 worker | 2 workers | 4 workers |
 |---|---|---|---|
-| Full analysis of **1,000,000 events** (8,768 partitions) | 43.4 s | 28.6 s | 23.7 s |
-| 100,000 events | 7.1 s | 4.9 s | 3.7 s |
-| 10,000 events | 1.2 s | 0.9 s | 0.7 s |
+| Full analysis of **1,000,000 events** (8,768 partitions) | 44.9 s | 30.4 s | 26.6 s |
+| 100,000 events | 8.8 s | 5.8 s | 4.3 s |
+| 10,000 events | 1.4 s | 1.0 s | 0.8 s |
 
 * Query latency is **flat** (p50 4-5 ms) while the raw data underneath grows 100×.
 * Load (5 min/level): 10 users 8 rps · 100 users 79 rps · **500 users 387 rps, p95 28 ms, 0 errors** · 1,000 users 638 rps,

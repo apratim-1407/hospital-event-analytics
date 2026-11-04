@@ -8,17 +8,18 @@ these figures**: they describe the system's shape, not a platform guarantee.
 ## 1. Processing time across dataset sizes (metric M1)
 
 Same `full_analysis` job (admission patterns + hourly resource utilisation + anomaly detection) over each dataset.
-Median of 2 runs. Each worker container runs 2 processes.
+Re-recorded on 2026-11-04 after the ward-capacity fix to the generator (one run per configuration). Each worker
+container runs 2 processes.
 
 | Dataset | Events | Partitions | 1 worker | 2 workers | 4 workers | Speed-up (1→4) | Throughput @4w |
 |---|---|---|---|---|---|---|---|
-| small | 10,000 | 248 | 1.2 s | 0.9 s | 0.7 s | 1.6× | 13.8k events/s |
-| medium | 100,000 | 1,448 | 7.1 s | 4.9 s | 3.7 s | 1.9× | 26.8k events/s |
-| large | 1,000,000 | 8,768 | 43.4 s | 28.6 s | 23.7 s | 1.8× | 42.2k events/s |
+| small | 10,000 | 248 | 1.4 s | 1.0 s | 0.8 s | 1.7× | 11.8k events/s |
+| medium | 100,000 | 1,448 | 8.8 s | 5.8 s | 4.3 s | 2.0× | 23.1k events/s |
+| large | 1,000,000 | 8,768 | 44.9 s | 30.4 s | 26.6 s | 1.7× | 37.6k events/s |
 
 * **Processing time scales roughly linearly with event count** (10× the data → 5-6× the time at one worker, because
   fixed per-job costs matter at the small end).
-* **Four workers do not give 4×.** Amdahl's law, measured: with 4 workers the map phase is ~2.7× faster, but the reduce
+* **Four workers do not give 4×.** Amdahl's law, measured (phase split from the first recording): with 4 workers the map phase is ~2.7× faster, but the reduce
   stage is serial (≈ 8 s at 1M events: reading accumulators, hourly occupancy and anomaly detection for 8 departments,
   then writing 210k hourly rows), and the chord barrier means the job is only as fast as its slowest partition.
   Predicting this and then measuring it is the result.
@@ -32,12 +33,13 @@ Median of 2 runs. Each worker container runs 2 processes.
 
 | Raw events underneath | p50 | p95 |
 |---|---|---|
-| 10,000 | 4.0 ms | 25.8 ms |
-| 100,000 | 4.7 ms | 25.8 ms |
-| 1,000,000 | 4.8 ms | 25.3 ms |
+| 10,000 | 8.1 ms | 29.8 ms |
+| 100,000 | 9.2 ms | 31.5 ms |
+| 1,000,000 | 4.2 ms | 23.8 ms |
 
 The endpoint reads pre-aggregated tables whose size depends on the date range and department count, not on how many raw
-events exist. That flat line is the clearest single piece of evidence that the architecture does what it claims.
+events exist. Run to run the figures move by a few milliseconds (an earlier recording read 4-5 ms at every size), but they never
+grow with the data. That flat line is the clearest single piece of evidence that the architecture does what it claims.
 
 ## 3. Load testing (Locust, 5 minutes per level)
 

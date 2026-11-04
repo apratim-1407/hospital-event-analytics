@@ -1,0 +1,5 @@
+# Shell scripts and container files run on Linux: keep LF endings even when committed from Windows.
+*.sh text eol=lf
+Dockerfile text eol=lf
+Caddyfile text eol=lf
+docker-compose*.yml text eol=lf

@@ -4,7 +4,8 @@
 * when SEED_USERS=true (dev): creates admin / analyst / viewer accounts and the
   ingest API key supplied in SEED_INGEST_API_KEY
 
-Production: leave SEED_USERS unset, create the first admin with `scripts.create_admin`
+Production: leave SEED_USERS unset (or, for a hosted demo, set ALLOW_DEMO_SEED=true with strong
+SEED_*_PASSWORD values), create the first admin with `scripts.create_admin`
 and mint ingest keys through POST /api/v1/admin/api-keys.
 """
 import structlog
@@ -52,8 +53,10 @@ def main() -> None:
     if not settings.seed_users:
         log.info("bootstrap.seed_skipped")
         return
-    if not settings.is_dev:
-        raise SystemExit("SEED_USERS is for development only; refusing to seed in this environment")
+    if not settings.is_dev and not settings.allow_demo_seed:
+        raise SystemExit("SEED_USERS is for development; set ALLOW_DEMO_SEED=true to seed a hosted demo on purpose")
+    if not settings.is_dev and not all((settings.seed_admin_password, settings.seed_analyst_password, settings.seed_viewer_password)):
+        raise SystemExit("A hosted demo needs SEED_*_PASSWORD set; refusing to create accounts with empty passwords")
     with SessionLocal() as db:
         ensure_user(db, settings.seed_admin_email, settings.seed_admin_password, "admin")
         ensure_user(db, settings.seed_analyst_email, settings.seed_analyst_password, "analyst")

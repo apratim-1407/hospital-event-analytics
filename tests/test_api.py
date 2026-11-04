@@ -495,3 +495,27 @@ def test_overview_requires_a_login_and_validates_dates(client, auth):
     assert client.get(f"{API}/overview/departments").status_code == 401
     bad = client.get(f"{API}/overview/summary", params={"start_date": "2025-03-01", "end_date": "2025-01-01"}, headers=auth("viewer"))
     assert bad.status_code == 400
+
+
+# ------------------------------------------------------------------ measured results + hosted-demo seeding
+def test_benchmark_results_need_a_login_and_only_report_recorded_files(client, auth):
+    assert client.get(f"{API}/reports/benchmarks").status_code == 401
+    r = client.get(f"{API}/reports/benchmarks", headers=auth("viewer"))
+    assert r.status_code == 200
+    body = r.json()
+    assert set(body) == {"available", "processing", "load_test", "failure_experiment"}
+    assert body["available"] == any(body[k] is not None for k in ("processing", "load_test", "failure_experiment"))
+
+
+def test_bootstrap_refuses_to_seed_outside_dev_unless_explicitly_allowed(monkeypatch):
+    from scripts import bootstrap
+
+    monkeypatch.setattr(bootstrap.settings, "seed_users", True)
+    monkeypatch.setattr(bootstrap.settings, "environment", "production")
+    monkeypatch.setattr(bootstrap.settings, "allow_demo_seed", False)
+    with pytest.raises(SystemExit, match="ALLOW_DEMO_SEED"):
+        bootstrap.main()
+    monkeypatch.setattr(bootstrap.settings, "allow_demo_seed", True)
+    monkeypatch.setattr(bootstrap.settings, "seed_viewer_password", "")
+    with pytest.raises(SystemExit, match="SEED_"):
+        bootstrap.main()

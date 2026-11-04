@@ -79,6 +79,9 @@ class Settings(BaseSettings):
     seed_viewer_email: str = "viewer@hospital.local"
     seed_viewer_password: str = ""
     seed_ingest_api_key: str = ""
+    # A hosted demo needs named accounts too. Seeding outside dev is refused unless this is set on purpose,
+    # and the passwords then come from the environment, never from defaults.
+    allow_demo_seed: bool = False
 
     @field_validator("database_url")
     @classmethod
