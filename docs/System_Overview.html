@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Large-Scale Hospital Event Analytics: System Overview</title>
+<style>
+  @page { size: A4; margin: 11mm 13mm 11mm 13mm; }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", Inter, Arial, sans-serif; font-size: 9.2pt; line-height: 1.38; color: #172B4D; margin: 0; }
+  h1 { font-size: 17pt; margin: 0 0 1px; letter-spacing: -.01em; }
+  h2 { font-size: 11pt; margin: 11px 0 4px; color: #1D4ED8; border-bottom: 1px solid #E5EAF1; padding-bottom: 2px; }
+  p { margin: 3px 0 5px; }
+  .sub { color: #64748B; font-size: 8.8pt; margin: 0 0 6px; }
+  .links { background: #F3F7FE; border: 1px solid #DCE6F8; border-radius: 5px; padding: 6px 9px; margin: 6px 0 2px; font-size: 8.9pt; }
+  .links b { display: inline-block; min-width: 70px; }
+  a { color: #1D4ED8; text-decoration: none; }
+  ul, ol { margin: 3px 0 5px; padding-left: 17px; }
+  li { margin: 1.5px 0; }
+  table { border-collapse: collapse; width: 100%; margin: 4px 0 6px; font-size: 8.6pt; }
+  th, td { text-align: left; padding: 3px 6px; border-bottom: 1px solid #E5EAF1; vertical-align: top; }
+  th { color: #64748B; font-weight: 600; font-size: 8pt; text-transform: uppercase; letter-spacing: .03em; }
+  td.n, th.n { text-align: right; white-space: nowrap; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .note { color: #64748B; font-size: 8.4pt; }
+  svg { display: block; width: 100%; height: auto; margin: 4px 0; }
+  .pb { break-before: page; }
+  code { font-family: Consolas, monospace; font-size: 8.4pt; background: #F1F5F9; padding: 0 3px; border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<h1>Large-Scale Hospital Event Analytics</h1>
+<p class="sub">Project P35 · Cloud Application and Development · Apratim Saxena, UPES</p>
+
+<div class="links">
+  <div><b>Source code</b> <a href="https://github.com/apratim-1407/hospital-event-analytics">github.com/apratim-1407/hospital-event-analytics</a></div>
+  <div><b>Live demo</b> <a href="{{DEMO_URL}}">{{DEMO_URL}}</a></div>
+  <div><b>Demo login</b> {{DEMO_LOGIN}}</div>
+</div>
+
+<h2>1. What the system does</h2>
+<p>A hospital produces a constant stream of events: admissions, discharges, transfers, ICU moves and surgeries. This system
+ingests that stream, keeps it as an immutable record, and turns it into answers an administrator can act on:
+<b>how many patients arrive</b> (by department, hour and source), <b>how full the beds are</b> (counts, free beds, hours above 90%)
+and <b>which days or hours were unusually busy or quiet</b> compared with what is normal for that weekday and time.
+The data is simulated (1,000,000 events across eight departments over 2023&ndash;2025); no real patient information is used.</p>
+
+<h2>2. End-to-end flow</h2>
+<svg viewBox="0 0 740 178" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial, sans-serif" font-size="10">
+  <defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L8 4L0 8z" fill="#64748B"/></marker></defs>
+  <g fill="#fff" stroke="#BFD0EE" stroke-width="1.2">
+    <rect x="4" y="14" width="104" height="44" rx="6"/><rect x="138" y="14" width="112" height="44" rx="6"/>
+    <rect x="280" y="14" width="124" height="44" rx="6"/><rect x="434" y="14" width="132" height="44" rx="6"/>
+    <rect x="596" y="14" width="140" height="44" rx="6"/>
+    <rect x="138" y="112" width="112" height="44" rx="6"/><rect x="280" y="112" width="124" height="44" rx="6"/>
+    <rect x="434" y="112" width="132" height="44" rx="6"/><rect x="596" y="112" width="140" height="44" rx="6"/>
+  </g>
+  <g fill="#172B4D" text-anchor="middle" font-weight="600">
+    <text x="56" y="33">Event sources</text><text x="194" y="33">Ingestion API</text><text x="342" y="33">Raw event store</text>
+    <text x="500" y="33">Analysis job</text><text x="666" y="33">Analytics tables</text>
+    <text x="194" y="131">Redis</text><text x="342" y="131">Map tasks</text><text x="500" y="131">Reduce tasks</text><text x="666" y="131">Serving API</text>
+  </g>
+  <g fill="#64748B" text-anchor="middle" font-size="8.6">
+    <text x="56" y="47">hospital systems, CSV files</text><text x="194" y="47">API key, validated, rate-limited</text>
+    <text x="342" y="47">Postgres, monthly partitions</text><text x="500" y="47">day &#215; department partitions</text>
+    <text x="666" y="47">precomputed, tagged with job id</text>
+    <text x="194" y="145">queue + shuffle + cache</text><text x="342" y="145">pure functions, in parallel</text>
+    <text x="500" y="145">merge, detect, persist</text><text x="666" y="145">JWT login, roles, cached</text>
+  </g>
+  <g stroke="#64748B" stroke-width="1.3" fill="none" marker-end="url(#a)">
+    <path d="M108 36H136"/><path d="M250 36H278"/><path d="M404 36H432"/><path d="M566 134H581V36H594"/>
+    <path d="M500 58V76H342V110"/><path d="M280 134H252"/><path d="M404 134H432"/>
+    <path d="M666 58V110"/>
+  </g>
+  <text x="371" y="170" fill="#64748B" font-size="8.6" text-anchor="middle">Web interface (served by the API) reads only the serving API</text>
+</svg>
+<ol>
+  <li><b>Ingest.</b> A source sends one event (<code>POST /events</code>) or registers a bulk file in object storage. An API key identifies the
+      source; every event is validated, then appended to the raw store. Raw rows can never be updated or deleted (a database trigger enforces it).</li>
+  <li><b>Analyse.</b> An analyst starts a job for a date range. The system splits it into <b>partitions of one day and one department</b>
+      (8,768 for the full dataset) and queues one small task per partition.</li>
+  <li><b>Map.</b> Workers run the tasks in parallel. Each task reads only its own slice and produces partial totals (admissions, stay lengths, hourly bed counts).
+      Tasks share nothing, so more workers means faster jobs.</li>
+  <li><b>Shuffle and reduce.</b> Partial totals are grouped through Redis. Reducers merge them, run the unusual-workload detector, and write the final rows
+      to the analytics tables in one bulk, repeat-safe step. Each row records which job produced it.</li>
+  <li><b>Serve.</b> The web interface and API read the precomputed tables, so a page loads in milliseconds however many raw events exist.</li>
+</ol>
+
+<h2>3. How the main parts work</h2>
+<table>
+  <tr><th style="width:21%">Part</th><th>Approach</th></tr>
+  <tr><td><b>Unusual workloads</b></td><td>Each department has its own baseline per weekday/weekend and hour (admissions) or day of week (bed use), built from the previous 35 days.
+      A period is flagged when it sits far above <i>or below</i> that baseline. Already-flagged values are left out of the baseline so a surge does not teach the
+      detector that surges are normal. Severity: moderate, high, critical. On the injected test incidents it found 7 of 7.</td></tr>
+  <tr><td><b>Security</b></td><td>Passwords hashed with bcrypt; short-lived JWT access tokens with rotating refresh tokens (a replayed token revokes the session);
+      API keys stored only as hashes; three roles (viewer reads, analyst also runs analyses, admin also manages keys); per-client rate limiting.</td></tr>
+  <tr><td><b>Observability</b></td><td>Structured JSON logs with a correlation id across API and workers; job progress per partition; metrics for processing time, latency and errors.</td></tr>
+  <tr><td><b>Web interface</b></td><td>Plain HTML/CSS/JavaScript, no build step, served by the API. Five pages (Overview, Admission patterns, Resource utilisation, Unusual workloads, Reports);
+      running analyses and connecting data sources sit under Settings because they are set-up tasks, not daily ones.</td></tr>
+  <tr><td><b>Deployment</b></td><td>Docker Compose: API, workers, PostgreSQL 16, Redis, object store, behind a Caddy proxy that provides HTTPS. One script sets up a fresh server.</td></tr>
+</table>
+
+<h2>4. Why it is built this way</h2>
+<table>
+  <tr><th style="width:27%">Decision</th><th>Reason</th></tr>
+  <tr><td>Immutable raw store, derived tables</td><td>Hospital records must be auditable. Analytics can be recomputed from the raw record at any time, and each result traces to the job that made it.</td></tr>
+  <tr><td>Partition by day &times; department</td><td>Admissions and bed counts add up cleanly across days and departments, so the work splits into independent pieces with no coordination between them.</td></tr>
+  <tr><td>Map/reduce on Celery workers</td><td>Shows the data-intensive pattern directly: independent map tasks, a shuffle, a reduce. At this scale (1M events) it runs on one machine; the same design adds workers or machines to go further.</td></tr>
+  <tr><td>Precompute, then serve</td><td>Reading finished tables keeps latency flat as data grows (measured below), and the heavy work never competes with page loads.</td></tr>
+  <tr><td>Repeat-safe writes</td><td>A re-run or a redelivered task overwrites the same rows instead of duplicating them, which makes retries and crash recovery safe.</td></tr>
+  <tr><td>PostgreSQL + Redis</td><td>Postgres gives transactions, monthly partitions and upserts for the record of truth; Redis is fast, short-lived working state that can always be rebuilt.</td></tr>
+</table>
+
+<h2>5. When things fail</h2>
+<ul>
+  <li><b>A worker dies mid-job.</b> Tasks are only acknowledged when finished, so the broker hands a dead worker's tasks to the survivors after 45 seconds. Tested by killing a worker at 40% of a 1M-event job:
+      the job still finished and the results were <b>identical</b> (checksum-matched) to a run with no failure; recovery took about 46 s.</li>
+  <li><b>Database briefly unavailable.</b> Tasks retry with growing waits; a long outage ends the job as &ldquo;partial&rdquo; and names the failed partitions. The API answers 503 instead of hanging.</li>
+  <li><b>Redis (the queue) unavailable.</b> New analyses are refused with a clear message, but <b>event ingestion keeps working</b> because it never touches the queue.</li>
+</ul>
+
+<h2>6. Measured results <span class="note">(one laptop, Docker; Windows, 16 CPUs shared by everything including the load generator)</span></h2>
+<div class="two">
+<div>
+<table>
+  <tr><th>Full analysis, events</th><th class="n">1 worker</th><th class="n">2</th><th class="n">4</th></tr>
+  <tr><td>10,000</td><td class="n">1.4 s</td><td class="n">1.0 s</td><td class="n">0.8 s</td></tr>
+  <tr><td>100,000</td><td class="n">8.8 s</td><td class="n">5.8 s</td><td class="n">4.3 s</td></tr>
+  <tr><td>1,000,000</td><td class="n">44.9 s</td><td class="n">30.4 s</td><td class="n">26.6 s</td></tr>
+</table>
+<p class="note">Four workers give about 1.7&times;, not 4&times;: the reduce step is serial and the job is only as fast as its slowest partition.</p>
+</div>
+<div>
+<table>
+  <tr><th>Question</th><th>Result</th></tr>
+  <tr><td>Query speed vs data size (10k &rarr; 1M events)</td><td>flat: median 4&ndash;9 ms, 95th percentile 24&ndash;32 ms</td></tr>
+  <tr><td>500 simultaneous users</td><td>387 requests/s, 95th pct 28 ms, 0 errors</td></tr>
+  <tr><td>1,000 simultaneous users</td><td>638 requests/s; only errors are deliberate rate-limit (429) refusals</td></tr>
+  <tr><td>Automated tests</td><td>90 passing</td></tr>
+</table>
+</div>
+</div>
+<p class="note">An earlier load test collapsed under pressure (database connections exhausted by blocking calls). Finding and fixing the three causes is documented in <code>docs/PERFORMANCE.md</code>.</p>
+
+<h2>7. Trying the demo (about three minutes)</h2>
+<ol>
+  <li>Open the demo link and sign in with the viewer login above (read-only).</li>
+  <li><b>Overview</b>: key figures against the previous period; use the period buttons and department filter, which stay selected as you move between pages.</li>
+  <li><b>Resource utilisation</b>: beds in use and free per department, hours above 90% compared with the previous period, and a day-by-hour heatmap.</li>
+  <li><b>Unusual workloads</b>: click any row to see why it was flagged. <b>Reports</b>: print the one-page summary, download CSVs, and see the measured results above.</li>
+  <li>With the admin login: <b>Settings &rarr; Analyses</b> to start a new analysis and watch partitions complete live; <b>Settings &rarr; Integrations</b> to create an API key and send an event.</li>
+</ol>
+<p class="note"><b>Limits.</b> Single server and single database (not highly available); simulated data; the benchmark figures come from one machine, so absolute speeds are indicative while the scaling shape and the failure behaviour are the evidence. Full detail: <code>README.md</code>, <code>docs/ARCHITECTURE.md</code>, <code>docs/PERFORMANCE.md</code>, <code>docs/DEPLOYMENT.md</code> in the repository.</p>
+
+</body>
+</html>
