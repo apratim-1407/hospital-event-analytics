@@ -1,4 +1,4 @@
-import { api, isAnalyst, friendly } from '../api.js';
+import { api, apiSpec, isAnalyst, friendly } from '../api.js';
 import { $, esc, n0, n1, pct, stayWord, dFull, hourWord, callout, icon, toast, skRows, badge, JOB_TYPE, STATUS, METRIC } from '../util.js';
 import { state, currentWindow, getSummary, getAnomalies, fetchAll, deptName, deptQuery, bedUse, countBySeverity, bedsOf } from '../data.js';
 import { head, filterTools, bindFilters, rangeText } from '../ui.js';
@@ -98,7 +98,7 @@ export default {
     /* measured results: shown only when the server provides them */
     try {
       // Ask the API what it offers first, so a server without this endpoint costs no failing request.
-      const spec = await fetch('/openapi.json').then((r) => r.json());
+      const spec = await apiSpec();
       if (!spec.paths?.['/api/v1/reports/benchmarks']) return;
       const m = await api('/reports/benchmarks');
       if (!ctx.current() || !m.available) return;

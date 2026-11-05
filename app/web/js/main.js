@@ -1,5 +1,5 @@
 /* Application shell: sign-in, sidebar, hash router, health indicator. */
-import { session, login, clearSession, health, friendly, isAnalyst } from './api.js';
+import { session, login, clearSession, health, friendly, isAnalyst, DEMO } from './api.js';
 import { $, $$, esc, icon, callout } from './util.js';
 import { loadDepartments } from './data.js';
 
@@ -88,6 +88,10 @@ document.addEventListener('click', (e) => { if (document.body.classList.contains
 async function boot() {
   show('shell');
   buildNav();
+  if (DEMO) {
+    $('#signout').hidden = true;
+    document.body.insertAdjacentHTML('afterbegin', '<div class="demo-bar">Demo snapshot of the running system: real recorded data, read-only. <a href="https://github.com/apratim-1407/hospital-event-analytics">Source code</a></div>');
+  }
   $('#who-email').textContent = session.email ?? '';
   $('#who-role').textContent = ROLE[session.role] ?? '';
   const root = $('#page');

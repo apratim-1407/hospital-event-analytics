@@ -96,6 +96,14 @@ It is plain HTML/CSS/JS with no build step and no external requests (hand-drawn 
 analyses, admins also see system health and manage keys). It only calls existing endpoints: the `/overview/*` summaries and
 the analytics, jobs, events and admin APIs. The API key typed on the ingestion page is kept in memory only.
 
+## Demo snapshot (no server needed)
+
+`scripts/build_demo.py` turns the web interface plus a recorded snapshot of the running system's API responses into a
+static site (`window.HEA_DEMO`), which is published on GitHub Pages. Every number is real data recorded by
+`scripts/record_snapshot.js` driving the live interface through every page, period and department; writes
+(new analyses, API keys, events) are refused because there is no server behind it. The full system is
+`docker compose up -d --build`.
+
 ## Deploying it
 
 `docker-compose.prod.yml` is the hosted configuration: the same containers behind a Caddy reverse proxy

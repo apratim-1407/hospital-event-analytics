@@ -2,6 +2,18 @@
 
 export const API = '/api/v1';
 
+/* Demo mode (static snapshot hosted without a server): the page sets window.HEA_DEMO, and every read is answered
+   from data/snapshot.json, recorded from the running system by scripts/record_snapshot.py. Writes are refused. */
+export const DEMO = typeof window !== 'undefined' && window.HEA_DEMO === true;
+const DEMO_READONLY = 'This is a read-only demo snapshot. Run the full system to start analyses, create keys or send events.';
+let snapshot = null;
+async function demoRead(path) {
+  snapshot ??= await fetch('data/snapshot.json').then((r) => r.json());
+  const hit = snapshot[path];
+  if (hit === undefined) throw new ApiError('This view is not part of the demo snapshot.', 404);
+  return hit;
+}
+
 const mem = {};
 const store = {
   get(k) { try { return sessionStorage.getItem(k); } catch { return mem[k] ?? null; } },
@@ -9,7 +21,9 @@ const store = {
   del(k) { try { sessionStorage.removeItem(k); } catch { delete mem[k]; } },
 };
 
-export const session = { access: store.get('access'), refresh: store.get('refresh'), email: store.get('email'), role: store.get('role') };
+export const session = DEMO
+  ? { access: 'demo', refresh: 'demo', email: 'Demo visitor', role: 'admin' }
+  : { access: store.get('access'), refresh: store.get('refresh'), email: store.get('email'), role: store.get('role') };
 export const isAnalyst = () => session.role === 'analyst' || session.role === 'admin';
 export const isAdmin = () => session.role === 'admin';
 
@@ -58,6 +72,10 @@ async function parse(r) {
 
 /** JWT-authenticated call. A 401 triggers one silent token refresh, then a sign-out. */
 export async function api(path, opts = {}, retry = true) {
+  if (DEMO) {
+    if (opts.method && opts.method !== 'GET') throw new ApiError(DEMO_READONLY, 405);
+    return demoRead(path);
+  }
   const headers = { ...(opts.headers || {}), Authorization: `Bearer ${session.access}` };
   if (opts.body) headers['Content-Type'] = 'application/json';
   const r = await fetch(API + path, { ...opts, headers, body: opts.body && typeof opts.body !== 'string' ? JSON.stringify(opts.body) : opts.body });
@@ -71,6 +89,7 @@ export async function api(path, opts = {}, retry = true) {
 
 /** Machine-credential call (event ingestion): authenticates with X-API-Key, never the user's JWT. */
 export async function apiWithKey(path, apiKey, opts = {}) {
+  if (DEMO) throw new ApiError(DEMO_READONLY, 405);
   const r = await fetch(API + path, {
     ...opts,
     headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
@@ -79,7 +98,14 @@ export async function apiWithKey(path, apiKey, opts = {}) {
   return parse(r);
 }
 
+/** The API's OpenAPI document, used to see which optional endpoints this server offers. */
+export async function apiSpec() {
+  if (DEMO) return { paths: { '/api/v1/reports/benchmarks': {} } };
+  return fetch('/openapi.json').then((r) => r.json());
+}
+
 export async function health() {
+  if (DEMO) return { ok: true, database: true, redis: true };
   try { const r = await fetch('/health'); return { ok: r.ok, ...(await r.json()) }; } catch { return { ok: false }; }
 }
 

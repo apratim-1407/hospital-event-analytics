@@ -300,3 +300,8 @@ tr[aria-expanded="true"] .chev { transform: rotate(90deg); }
   .side, .topbar, .tools, .noprint, .toast { display: none !important; }
   .shell { display: block; } .main { padding: 0; } body { background: #fff; }
 }
+
+/* demo snapshot banner */
+.demo-bar { background: var(--blue-soft); color: var(--blue-ink); text-align: center; padding: 0.4rem 1rem; font-size: 12.5px; border-bottom: 1px solid var(--line); }
+.demo-bar a { color: inherit; text-decoration: underline; }
+@media print { .demo-bar { display: none; } }

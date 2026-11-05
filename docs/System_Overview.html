@@ -34,8 +34,8 @@
 
 <div class="links">
   <div><b>Source code</b> <a href="https://github.com/apratim-1407/hospital-event-analytics">github.com/apratim-1407/hospital-event-analytics</a></div>
-  <div><b>Live demo</b> <a href="{{DEMO_URL}}">{{DEMO_URL}}</a></div>
-  <div><b>Demo login</b> {{DEMO_LOGIN}}</div>
+  <div><b>Live demo</b> <a href="{{DEMO_URL}}">{{DEMO_URL}}</a> &nbsp;(interactive, no login needed)</div>
+  <div><b>Run it fully</b> <code>docker compose up -d --build</code> in the repository starts the complete system; see the README.</div>
 </div>
 
 <h2>1. What the system does</h2>
@@ -143,12 +143,14 @@ The data is simulated (1,000,000 events across eight departments over 2023&ndash
 <p class="note">An earlier load test collapsed under pressure (database connections exhausted by blocking calls). Finding and fixing the three causes is documented in <code>docs/PERFORMANCE.md</code>.</p>
 
 <h2>7. Trying the demo (about three minutes)</h2>
+<p class="note" style="margin-top:0">The hosted demo is a <b>read-only snapshot</b>: every number and chart is real data recorded from the running system (1,000,000 events, the full analysis, all period and department filters),
+served as static files so it needs no server. Starting new analyses and sending events work on the full system.</p>
 <ol>
-  <li>Open the demo link and sign in with the viewer login above (read-only).</li>
+  <li>Open the demo link. No sign-in is needed.</li>
   <li><b>Overview</b>: key figures against the previous period; use the period buttons and department filter, which stay selected as you move between pages.</li>
   <li><b>Resource utilisation</b>: beds in use and free per department, hours above 90% compared with the previous period, and a day-by-hour heatmap.</li>
   <li><b>Unusual workloads</b>: click any row to see why it was flagged. <b>Reports</b>: print the one-page summary, download CSVs, and see the measured results above.</li>
-  <li>With the admin login: <b>Settings &rarr; Analyses</b> to start a new analysis and watch partitions complete live; <b>Settings &rarr; Integrations</b> to create an API key and send an event.</li>
+  <li><b>Settings &rarr; Analyses</b> shows the analysis history (status, partitions, duration, events processed); <b>Settings &rarr; Integrations</b> shows the ingestion steps. On the full system these start analyses with a live progress bar and create API keys.</li>
 </ol>
 <p class="note"><b>Limits.</b> Single server and single database (not highly available); simulated data; the benchmark figures come from one machine, so absolute speeds are indicative while the scaling shape and the failure behaviour are the evidence. Full detail: <code>README.md</code>, <code>docs/ARCHITECTURE.md</code>, <code>docs/PERFORMANCE.md</code>, <code>docs/DEPLOYMENT.md</code> in the repository.</p>
 
