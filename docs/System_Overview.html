@@ -13,6 +13,8 @@
   h2 { font-size: 13pt; font-weight: bold; margin: 14pt 0 4pt; break-after: avoid; }
   .page > h2:first-child { margin-top: 0; }
   p { margin: 0 0 7pt; text-align: left; orphans: 3; widows: 3; }
+  ul { margin: 0 0 7pt; padding-left: 18pt; }
+  li { margin: 0 0 3pt; orphans: 2; widows: 2; }
   .sub { margin-bottom: 4pt; }
   a { color: #000; text-decoration: underline; }
 </style>
@@ -32,7 +34,15 @@
 
 <h2>How it works: what a visitor sees first</h2>
 <p>A visitor who opens the demo link lands directly on the Overview page. On the full system they first sign in, and what they can do depends on their role: a viewer can read everything, an analyst can also run analyses, and an administrator can also manage access keys. On the left is a short menu of five pages (Overview, Admission patterns, Resource utilisation, Unusual workloads and Reports) with Settings below it, because starting analyses and connecting data sources are set-up tasks rather than daily ones. At the top of the page are the dates the results cover and two controls, a time period (last 30 days, 90 days, 12 months, or all time) and a department filter. Both stay selected as the visitor moves between pages.</p>
-<p>Underneath is a row of key figures, each compared with the period before: patients admitted (147,663 over the last twelve months), average length of stay, beds in use stated as a count, for example 596 of 1,019 with 423 free, and the number of unusual workload periods. Below that are the admissions trend, the departments compared, bed use for each department with the busiest hour marked, and the most serious recent unusual periods. Everything is written in plain words, and counts come before percentages, because administrators manage beds, not ratios.</p>
+<p>Underneath, the page shows the following, in order:</p>
+<ul>
+<li>A row of key figures, each compared with the period before: patients admitted (147,663 over the last twelve months), average length of stay, beds in use stated as a count (for example 596 of 1,019, with 423 free), and the number of unusual workload periods.</li>
+<li>The admissions trend over time.</li>
+<li>The departments compared by patients admitted.</li>
+<li>Bed use for each department, with the busiest hour marked.</li>
+<li>The most serious recent unusual periods, each described in a plain sentence.</li>
+</ul>
+<p>Everything is written in plain words, and counts come before percentages, because administrators manage beds, not ratios.</p>
 </section>
 
 <section class="page">
@@ -50,12 +60,31 @@
 
 <section class="page">
 <h2>Problems I faced</h2>
-<p>The hardest part was deployment, and the reasons were practical. I planned to host the full system on a free Oracle Cloud server, but its signup needs a credit card for identity verification and I do not have one, so that route was closed. A temporary public link from my own laptop worked, but it exists only while the laptop, Docker and the connection stay on, which is not acceptable for an evaluation. Docker Desktop on my laptop also kept crashing at startup because of stale socket files left behind by an unclean shutdown, and I had to move those aside before the system would start. Preparing the hosted configuration was still worthwhile, because testing it found a real bug: a fresh build installed a newer version of a messaging library that needs a newer Redis client than the one I had fixed, so every worker crashed on start. It had gone unnoticed because my existing images were built earlier. I fixed it by pinning every package to the tested versions, so any fresh install builds the same system.</p>
+<p>The hardest part was deployment, and the reasons were practical.</p>
+<ul>
+<li>I planned to host the full system on a free Oracle Cloud server, but its signup needs a credit card for identity verification and I do not have one, so that route was closed.</li>
+<li>A temporary public link from my own laptop worked, but it exists only while the laptop, Docker and the connection stay on, which is not acceptable for an evaluation.</li>
+<li>Docker Desktop on my laptop kept crashing at startup because of stale socket files left behind by an unclean shutdown, and I had to move those aside before the system would start.</li>
+<li>Preparing the hosted configuration still found a real bug: a fresh build installed a newer version of a messaging library that needs a newer Redis client than the one I had fixed, so every worker crashed on start. It had gone unnoticed because my existing images were built earlier. I fixed it by pinning every package to the tested versions, so any fresh install builds the same system.</li>
+</ul>
 <p>The final solution is a read-only snapshot hosted free on GitHub Pages. I recorded every response the interface needs from the running system by driving every page, period and department, and the published site answers from that recording instead of from a server. The numbers are real, but starting a new analysis, sending events and downloading CSV files only work on the full system, which starts with one command from the repository. The complete hosted configuration, with HTTPS, generated secrets and one setup script for a fresh server, is also in the repository for anyone who has a server.</p>
-<p>Earlier in the build, three other problems taught me a lot. Under heavy load the system collapsed because database connections were all in use while requests waited on slow steps; fixing three causes took the 500-user test from heavy failures to none. A killed worker's tasks took about two minutes to be handed over because of the queue's default check interval, and changing it brought recovery down to 46 seconds. And building the interface exposed a flaw in my simulated data: six of the eight wards looked over capacity in a normal year, so I resized the wards from the simulated busiest hour.</p>
+<p>Earlier in the build, three other problems taught me a lot.</p>
+<ul>
+<li>Under heavy load the system collapsed because database connections were all in use while requests waited on slow steps; fixing three causes took the 500-user test from heavy failures to none.</li>
+<li>A killed worker's tasks took about two minutes to be handed over because of the queue's default check interval; changing it brought recovery down to 46 seconds.</li>
+<li>Building the interface exposed a flaw in my simulated data: six of the eight wards looked over capacity in a normal year, so I resized the wards from the simulated busiest hour.</li>
+</ul>
 
 <h2>How to check the demo</h2>
-<p>Open https://apratim-1407.github.io/hospital-event-analytics/ and try the following in order; no sign-in is needed. On Overview, change the period and the department and watch every figure update. On Resource utilisation, read the beds in use and beds free for each department, and the hours above 90 percent compared with the previous period. On Unusual workloads, click any row to see why it was flagged. On Reports, read the measured results and use the print button for a one-page summary. Under Settings, Analyses shows the history of analyses and Integrations shows how events are sent in. The demo is a read-only copy of real recorded data. The source code, the instructions to run everything yourself, and the longer documents are at https://github.com/apratim-1407/hospital-event-analytics.</p>
+<p>Open https://apratim-1407.github.io/hospital-event-analytics/ (no sign-in is needed, and it is a read-only copy of real recorded data) and try the following in order.</p>
+<ul>
+<li>On Overview, change the period and the department and watch every figure update.</li>
+<li>On Resource utilisation, read the beds in use and beds free for each department, and the hours above 90 percent compared with the previous period.</li>
+<li>On Unusual workloads, click any row to see why it was flagged.</li>
+<li>On Reports, read the measured results and use the print button for a one-page summary.</li>
+<li>Under Settings, Analyses shows the history of analyses and Integrations shows how events are sent in.</li>
+</ul>
+<p>The source code, the instructions to run everything yourself, and the longer documents are at https://github.com/apratim-1407/hospital-event-analytics.</p>
 </section>
 
 </body>
