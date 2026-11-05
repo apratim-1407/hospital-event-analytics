@@ -10,7 +10,7 @@ let snapshot = null;
 async function demoRead(path) {
   snapshot ??= await fetch('data/snapshot.json').then((r) => r.json());
   const hit = snapshot[path];
-  if (hit === undefined) throw new ApiError('This view is not part of the demo snapshot.', 404);
+  if (hit === undefined) throw new ApiError('This is not included in the demo snapshot. It is available on the full system.', 404);
   return hit;
 }
 
