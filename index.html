@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hospital Event Analytics</title>
+  <meta name="description" content="Admissions, bed utilisation and unusual workloads for hospital operations.">
+  <meta name="color-scheme" content="light">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+  <!-- Sign in -->
+  <main id="signin" class="signin" hidden>
+    <div class="signin-box">
+      <div class="logo" style="padding:0">
+        <svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#2563EB"/><path d="M13 7h6v6h6v6h-6v6h-6v-6H7v-6h6z" fill="#fff"/></svg>
+        <div><b>Hospital Event Analytics</b><span>Operations</span></div>
+      </div>
+      <h1>Sign in</h1>
+      <p class="slate">See how busy the hospital has been and where capacity is tight.</p>
+      <form id="signin-form">
+        <label class="field"><span>Email</span><input id="email" type="email" required autocomplete="username"></label>
+        <label class="field"><span>Password</span><input id="password" type="password" required autocomplete="current-password"></label>
+        <p id="signin-error" role="alert" style="color:var(--red)" hidden></p>
+        <button class="btn primary" id="signin-go" type="submit">Sign in</button>
+      </form>
+      <p class="fine">Demonstration data only. No real patient information is used.</p>
+    </div>
+  </main>
+
+  <!-- Application -->
+  <div id="shell" class="shell" hidden>
+    <aside class="side" id="side" aria-label="Main">
+      <div class="logo">
+        <svg width="28" height="28" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#2563EB"/><path d="M13 7h6v6h6v6h-6v6h-6v-6H7v-6h6z" fill="#fff"/></svg>
+        <div><b>Hospital Event</b><span>Analytics</span></div>
+      </div>
+      <nav class="nav" id="nav" aria-label="Sections"></nav>
+      <div class="side-foot">
+        <div class="status" id="status" role="status"><i></i><span id="status-text">Checking…</span></div>
+        <div class="who"><b id="who-email"></b><span id="who-role"></span></div>
+        <button class="linkbtn" id="signout" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg> Sign out</button>
+      </div>
+    </aside>
+
+    <div>
+      <div class="topbar">
+        <button id="menu" type="button" aria-label="Open menu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+        <b id="topbar-title">Overview</b>
+      </div>
+      <main class="main"><div class="page" id="page" tabindex="-1"></div></main>
+    </div>
+  </div>
+
+  <script>window.HEA_DEMO = true;</script>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
